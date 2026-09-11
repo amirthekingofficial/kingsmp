@@ -502,6 +502,26 @@ public class FactionManager {
         return player != null ? getPlayerRung(player.getUUID()) : 1;
     }
 
+    public static boolean isInFactionTerritory(ServerPlayer player) {
+        if (player == null) return false;
+        String faction = getPlayerFaction(player);
+        if (faction == null) return false;
+        Map<String, OutpostLocation> outposts = getOutposts(faction);
+        if (outposts == null || outposts.isEmpty()) return false;
+        String currentDim = player.level().dimension().identifier().toString();
+        for (OutpostLocation outpost : outposts.values()) {
+            if (outpost.dimension.equalsIgnoreCase(currentDim)) {
+                double dx = outpost.x - player.getX();
+                double dy = outpost.y - player.getY();
+                double dz = outpost.z - player.getZ();
+                if ((dx * dx + dy * dy + dz * dz) <= (64.0 * 64.0)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     public static boolean promotePlayer(ServerPlayer leader, ServerPlayer target, FactionRank newRank) {
         String faction = getPlayerFaction(leader);
         if (faction == null || !faction.equals(getPlayerFaction(target))) return false;

@@ -507,7 +507,9 @@ public class KingDataManager {
 
         try {
             Path path = getSaveFile(server);
-            Files.writeString(path, gson.toJson(root));
+            Path tempPath = path.resolveSibling(path.getFileName().toString() + ".tmp");
+            Files.writeString(tempPath, gson.toJson(root), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+            Files.move(tempPath, path, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
             KingSMPMod.LOGGER.error("Failed to save KingSMP data", e);
         }

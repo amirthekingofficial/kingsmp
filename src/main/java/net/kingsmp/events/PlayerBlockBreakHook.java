@@ -44,7 +44,6 @@ public class PlayerBlockBreakHook {
                                 .withStyle(ChatFormatting.GRAY)
                                 .append(Component.literal(quest.progress + "/" + quest.target).withStyle(ChatFormatting.YELLOW))
                                 .append(" blocks mined."));
-                        KingSMPMod.saveNow();
                     }
                 }
             }

@@ -140,7 +140,12 @@ public class CrownManager {
                 ? KingSMPConfig.crownSkullsHealthBonus  // +12.0 HP (+6 Hearts)
                 : KingSMPConfig.crownBaseHealthBonus;   // +4.0 HP (+2 Hearts)
 
-        boolean hadModifier = attr.hasModifier(KingSMPMod.HEALTH_MODIFIER_ID);
+        AttributeModifier existing = attr.getModifier(KingSMPMod.HEALTH_MODIFIER_ID);
+        if (existing != null && Math.abs(existing.amount() - bonus) < 0.001) {
+            return;
+        }
+
+        boolean hadModifier = (existing != null);
         attr.removeModifier(KingSMPMod.HEALTH_MODIFIER_ID);
 
         attr.addPermanentModifier(new AttributeModifier(

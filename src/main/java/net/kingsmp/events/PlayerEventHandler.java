@@ -39,7 +39,8 @@ public class PlayerEventHandler {
     public static void applyKingEffects(MinecraftServer server, KingDataManager data) {
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             boolean isKing = data.isKing(player.getUUID());
-            boolean hasCrown = hasCrownInInventory(player);
+            ItemStack crownStack = net.kingsmp.crowns.CrownManager.getCrownInInventory(player);
+            boolean hasCrown = crownStack != null && !crownStack.isEmpty();
 
             // ── USURPER LOGIC ─────────────────────────────────────────────────
             if (hasCrown && !isKing) {
@@ -55,186 +56,63 @@ public class PlayerEventHandler {
                             false);
 
                     KingSMPMod.playSoundToPlayer(player, net.minecraft.sounds.SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, 1.0f, 1.0f);
-
-                    applyHealthBonus(player, true);
-                    player.heal((float) HEALTH_BONUS);
                 }
             }
             // ──────────────────────────────────────────────────────────────────
 
             if (isKing && hasCrown) {
-                applyEffects(player);
-                applyHealthBonus(player, true);
+                net.kingsmp.crowns.CrownType crownType = KingSMPMod.getCrownType(crownStack);
+                int crownStep = KingSMPMod.getCrownStep(crownStack);
+                net.kingsmp.crowns.CrownManager.tickPlayer(player, crownType, crownStep);
                 data.addReignTick(player.getUUID());
             } else {
-                removeEffects(player);
-                applyHealthBonus(player, false);
+                net.kingsmp.crowns.CrownManager.clearPassives(player);
             }
 
             enforceEnderChestRules(player);
 
-            // ── FACTION RANKS & BUFFS ──
-            // FIX: Use getPlayerRank() which returns FactionRank enum, NOT
-            // getPlayerFaction() which returns a String!
-            FactionManager.FactionRank rank = FactionManager.getPlayerRank(player);
+            // ── FACTION BRANCHING PERKS ──
+            FactionManager.RankPath path = FactionManager.getPlayerPath(player);
+            int rung = FactionManager.getPlayerRung(player);
 
-            if (rank != null) {
-                // 👑 KINGS: Haste I, Fire Resistance, Hero of the Village.
-                if (rank == FactionManager.FactionRank.KING) {
-                    applyCrownEffect(player, MobEffects.HASTE, 0);
-                    applyCrownEffect(player, MobEffects.FIRE_RESISTANCE, 0);
-                    applyCrownEffect(player, MobEffects.HERO_OF_THE_VILLAGE, 0);
-                    
-                    // Remove commander/knight effects they don't have
-                    if (!isKing || !hasCrown) {
-                        removeCrownEffect(player, MobEffects.SPEED);
+            if (path != null) {
+                switch (path) {
+                    case SCOUT -> {
+                        // R1: Speed I, R3: Night Vision
+                        if (rung >= 1 && (!isKing || !hasCrown)) {
+                            applySafeEffect(player, MobEffects.SPEED, 0);
+                        }
+                        if (rung >= 3) {
+                            applySafeEffect(player, MobEffects.NIGHT_VISION, 0);
+                        }
                     }
-                }
-                // ⚡ COMMANDERS: Speed I, Haste I, Fire Resistance, and Hero of the Village.
-                else if (rank == FactionManager.FactionRank.COMMANDER) {
-                    applyCrownEffect(player, MobEffects.SPEED, 0);
-                    applyCrownEffect(player, MobEffects.HASTE, 0);
-                    applyCrownEffect(player, MobEffects.FIRE_RESISTANCE, 0);
-                    applyCrownEffect(player, MobEffects.HERO_OF_THE_VILLAGE, 0);
-                }
-                // 🛡️ KNIGHTS: Resistance I.
-                else if (rank == FactionManager.FactionRank.KNIGHT) {
-                    applyCrownEffect(player, MobEffects.RESISTANCE, 0);
-                    
-                    // Remove king/commander effects they don't have
-                    removeCrownEffect(player, MobEffects.HASTE);
-                    if (!isKing || !hasCrown) {
-                        removeCrownEffect(player, MobEffects.SPEED);
-                        removeCrownEffect(player, MobEffects.FIRE_RESISTANCE);
-                        removeCrownEffect(player, MobEffects.HERO_OF_THE_VILLAGE);
+                    case OCCULT -> {
+                        // R1: Fire Resistance
+                        if (rung >= 1) {
+                            applySafeEffect(player, MobEffects.FIRE_RESISTANCE, 0);
+                        }
                     }
-                }
-                // (RECRUITS get no buffs until they earn them!)
-                else if (rank == FactionManager.FactionRank.RECRUIT) {
-                    removeCrownEffect(player, MobEffects.HASTE);
-                    removeCrownEffect(player, MobEffects.RESISTANCE);
-                    if (!isKing || !hasCrown) {
-                        removeCrownEffect(player, MobEffects.SPEED);
-                        removeCrownEffect(player, MobEffects.FIRE_RESISTANCE);
-                        removeCrownEffect(player, MobEffects.HERO_OF_THE_VILLAGE);
+                    case MILITARY -> {
+                        // R2: Resistance I in claims, R3: Strength I in claims
+                        if (rung >= 2 && FactionManager.isInFactionTerritory(player)) {
+                            applySafeEffect(player, MobEffects.RESISTANCE, 0);
+                        }
+                        if (rung >= 3 && FactionManager.isInFactionTerritory(player)) {
+                            applySafeEffect(player, MobEffects.STRENGTH, 0);
+                        }
                     }
-                }
-            } else {
-                // If the player lost their rank, we need to remove the faction buffs
-                removeCrownEffect(player, MobEffects.HASTE);
-                removeCrownEffect(player, MobEffects.RESISTANCE);
-                if (!isKing || !hasCrown) {
-                    removeCrownEffect(player, MobEffects.SPEED);
-                    removeCrownEffect(player, MobEffects.FIRE_RESISTANCE);
-                    removeCrownEffect(player, MobEffects.HERO_OF_THE_VILLAGE);
+                    case LOGISTICS -> {
+                        // Logistics has market perks & extra outposts (handled in events/shop)
+                    }
                 }
             }
         }
     }
 
-    private static boolean hasCrownInInventory(ServerPlayer player) {
-        for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
-            ItemStack stack = player.getInventory().getItem(i);
-            if (KingSMPMod.isCrown(stack))
-                return true;
-        }
-        return false;
-    }
-
-    private static int getPlayerCrownLevel(ServerPlayer player) {
-        for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
-            ItemStack stack = player.getInventory().getItem(i);
-            if (KingSMPMod.isCrown(stack)) {
-                return KingSMPMod.getCrownLevel(stack);
-            }
-        }
-        return 1;
-    }
-
-    private static void applyCrownEffect(ServerPlayer player, net.minecraft.core.Holder<net.minecraft.world.effect.MobEffect> effect, int amp) {
+    private static void applySafeEffect(ServerPlayer player, net.minecraft.core.Holder<net.minecraft.world.effect.MobEffect> effect, int amp) {
         MobEffectInstance current = player.getEffect(effect);
-        // Only apply if the player doesn't have the effect, OR if the current effect is from the Crown (ambient, no particles)
-        // or if it's a weaker effect.
         if (current == null || (current.isAmbient() && !current.isVisible()) || current.getAmplifier() < amp) {
             player.addEffect(new MobEffectInstance(effect, 100, amp, true, false, true));
-        }
-    }
-
-    private static void applyEffects(ServerPlayer player) {
-        int level = getPlayerCrownLevel(player);
-
-        // SPEED: Tier 1 → Speed I, Tier 2-4 → Speed II, Tier 5 → Speed III
-        int speedAmp = (level == 5) ? 2 : (level >= 2) ? 1 : 0;
-        applyCrownEffect(player, MobEffects.SPEED, speedAmp);
-
-        // STRENGTH: Tier 1-2 → Strength I, Tier 3-4 → Strength II, Tier 5 → Strength III
-        int strengthAmp = (level == 5) ? 2 : (level >= 3) ? 1 : 0;
-        applyCrownEffect(player, MobEffects.STRENGTH, strengthAmp);
-
-        // RESISTANCE: Tier 1-3 → Resistance I, Tier 4-5 → Resistance II
-        int resAmp = (level >= 4) ? 1 : 0;
-        applyCrownEffect(player, MobEffects.RESISTANCE, resAmp);
-
-        // FIRE RESISTANCE: Unlocked at Tier 2+
-        if (level >= 2) {
-            applyCrownEffect(player, MobEffects.FIRE_RESISTANCE, 0);
-        }
-
-        // REGENERATION: Tier 4 → Regen I, Tier 5 → Regen II
-        if (level >= 4) {
-            int regenAmp = (level == 5) ? 1 : 0;
-            applyCrownEffect(player, MobEffects.REGENERATION, regenAmp);
-        }
-
-        // HERO OF THE VILLAGE: All levels
-        applyCrownEffect(player, MobEffects.HERO_OF_THE_VILLAGE, 0);
-    }
-
-    private static void removeCrownEffect(ServerPlayer player, net.minecraft.core.Holder<net.minecraft.world.effect.MobEffect> effect) {
-        MobEffectInstance current = player.getEffect(effect);
-        // Only remove the effect if it was applied by the crown (ambient, no particles)
-        if (current != null && current.isAmbient() && !current.isVisible()) {
-            player.removeEffect(effect);
-        }
-    }
-
-    private static void removeEffects(ServerPlayer player) {
-        removeCrownEffect(player, MobEffects.SPEED);
-        removeCrownEffect(player, MobEffects.STRENGTH);
-        removeCrownEffect(player, MobEffects.RESISTANCE);
-        removeCrownEffect(player, MobEffects.REGENERATION);
-        removeCrownEffect(player, MobEffects.NIGHT_VISION);
-        removeCrownEffect(player, MobEffects.FIRE_RESISTANCE);
-        removeCrownEffect(player, MobEffects.HERO_OF_THE_VILLAGE);
-    }
-
-    private static void applyHealthBonus(ServerPlayer player, boolean apply) {
-        net.minecraft.world.entity.ai.attributes.AttributeInstance attr = player
-                .getAttribute(Attributes.MAX_HEALTH);
-        if (attr == null)
-            return;
-
-        boolean hadModifier = attr.hasModifier(KingSMPMod.HEALTH_MODIFIER_ID);
-        attr.removeModifier(KingSMPMod.HEALTH_MODIFIER_ID);
-
-        if (apply) {
-            int level = getPlayerCrownLevel(player);
-
-            double bonusHearts = switch (level) {
-                case 2 -> 12.0; // +6 Hearts
-                case 3 -> 20.0; // +10 Hearts
-                case 4 -> 28.0; // +14 Hearts
-                case 5 -> 40.0; // +20 Hearts
-                default -> 8.0; // +4 Hearts (Tier 1)
-            };
-
-            attr.addPermanentModifier(new AttributeModifier(
-                    KingSMPMod.HEALTH_MODIFIER_ID,
-                    bonusHearts,
-                    AttributeModifier.Operation.ADD_VALUE));
-
-            if (!hadModifier)
-                player.heal((float) bonusHearts);
         }
     }
 
@@ -352,8 +230,8 @@ public class PlayerEventHandler {
         player.sendSystemMessage(Component.literal(""));
 
         if (data.isKing(player.getUUID())) {
-            boolean alreadyHasCrown = hasCrownInInventory(player);
-            if (!alreadyHasCrown) {
+            ItemStack crown = net.kingsmp.crowns.CrownManager.getCrownInInventory(player);
+            if (crown == null || crown.isEmpty()) {
                 net.kingsmp.crowns.CrownType type = net.kingsmp.crowns.CrownType.SKULLS;
                 if (net.kingsmp.factions.FactionManager.isFactionLeader(player)) {
                     type = net.kingsmp.crowns.CrownType.END;
@@ -368,7 +246,7 @@ public class PlayerEventHandler {
                         };
                     }
                 }
-                ItemStack crown = KingSMPMod.createCrown(type, 1);
+                crown = KingSMPMod.createCrown(type, 1);
                 if (!player.getInventory().add(crown)) {
                     player.drop(crown, false);
                 }
@@ -377,15 +255,13 @@ public class PlayerEventHandler {
                                 .withStyle(ChatFormatting.GOLD));
             }
 
-            applyEffects(player);
-            applyHealthBonus(player, true);
+            net.kingsmp.crowns.CrownManager.tickPlayer(player, KingSMPMod.getCrownType(crown), KingSMPMod.getCrownStep(crown));
         }
     }
 
     public static void onPlayerLeave(ServerPlayer player, KingDataManager data) {
         net.kingsmp.shop.ShopScreenHandler.cleanupSearchSession(player.getUUID(), player.level().getServer());
-        removeEffects(player);
-        applyHealthBonus(player, false);
+        net.kingsmp.crowns.CrownManager.clearPassives(player);
 
         if (CombatTracker.isInCombat(player)) {
             // Dethrone if King

@@ -66,16 +66,20 @@ public class KingSMPMod implements ModInitializer {
             }
         } else if (!savePending) {
             savePending = true;
-            // Schedule async deferred save
+            // Schedule async deferred save and dispatch onto main server thread safely
             java.util.concurrent.CompletableFuture.runAsync(() -> {
                 try {
-                    Thread.sleep(15000L - (System.currentTimeMillis() - lastSaveTime));
-                    synchronized (KingSMPMod.class) {
-                        if (savePending && server != null) {
-                            dataManager.saveToDisk(server);
-                            lastSaveTime = System.currentTimeMillis();
-                            savePending = false;
-                        }
+                    Thread.sleep(Math.max(1000L, 15000L - (System.currentTimeMillis() - lastSaveTime)));
+                    if (server != null) {
+                        server.execute(() -> {
+                            synchronized (KingSMPMod.class) {
+                                if (savePending && server != null) {
+                                    dataManager.saveToDisk(server);
+                                    lastSaveTime = System.currentTimeMillis();
+                                    savePending = false;
+                                }
+                            }
+                        });
                     }
                 } catch (Exception e) {
                     LOGGER.error("Failed to execute deferred save", e);
@@ -299,13 +303,15 @@ public class KingSMPMod implements ModInitializer {
         ServerTickEvents.END_SERVER_TICK.register(server -> {
             net.kingsmp.shop.GambleScreenHandler.tickActiveGambles(server);
 
-            for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-                if (net.kingsmp.events.CombatTracker.isInCombat(player)) {
-                    long remainingSeconds = net.kingsmp.events.CombatTracker.getRemainingSeconds(player);
-                    player.sendSystemMessage(
-                            Component.literal("⚔️ IN COMBAT: " + remainingSeconds + "s remaining ⚔️")
-                                    .withStyle(ChatFormatting.RED, ChatFormatting.BOLD),
-                            true);
+            if (server.getTickCount() % 20 == 0) {
+                for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+                    if (net.kingsmp.events.CombatTracker.isInCombat(player)) {
+                        long remainingSeconds = net.kingsmp.events.CombatTracker.getRemainingSeconds(player);
+                        player.sendSystemMessage(
+                                Component.literal("⚔️ IN COMBAT: " + remainingSeconds + "s remaining ⚔️")
+                                        .withStyle(ChatFormatting.RED, ChatFormatting.BOLD),
+                                true);
+                    }
                 }
             }
 
