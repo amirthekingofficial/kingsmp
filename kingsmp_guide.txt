@@ -1,0 +1,482 @@
+================================================================================
+                    👑 KINGSMP COMPLETE GAMEPLAY & COMMANDS GUIDE 👑
+================================================================================
+
+Welcome to the comprehensive guide for KingSMP! This guide contains details on
+every mechanic, buff, command, player quest, and buyable item directly sourced
+from the KingSMP mod codebase.
+
+--------------------------------------------------------------------------------
+1. 👑 THE MONARCHY, ELECTIONS & CROWN TIER BUFFS
+--------------------------------------------------------------------------------
+
+The primary objective of KingSMP is to claim, upgrade, and protect the Royal Crown.
+Up to 5 players can hold the rank of King simultaneously.
+
+- Claiming the Crown:
+  * Elections: Started automatically every 250 Minecraft days (or manually by an
+    Admin). Players vote for candidates using "/vote <player>". The winners are
+    crowned and receive a Level 1 Crown.
+  * Usurping: If you possess a Royal Crown (e.g. by looting it or picking it up
+    from a fallen King) and there is an open King slot, you instantly claim the
+    reign and become King.
+
+- Crown Degradation & Death:
+  * If a King dies, they are dethroned and the Crown's level degrades by 1 (unless 
+    it was already at Level 5/MAX).
+  * If a King leaves the server while in PvP combat, they are instantly dethroned.
+
+- Ender Chest Restriction:
+  * The Royal Crown and the Dragon Egg are sacred items of power and cannot be
+    stored in Ender Chests (regular or expanded). If placed inside, they will
+    violently escape back into the player's inventory or drop to the ground.
+
+- Placing Restriction:
+  * The Royal Crown (which is a carved pumpkin under the hood) cannot be placed
+    as a block.
+
+- Crown Upgrades & Level Buffs:
+  To upgrade, hold the Crown in your inventory and run the "/upgrade" command
+  while holding the necessary materials.
+
+  * 👑 Level 1 (The King)
+    - Potion Effects: Speed I, Strength I, Resistance I, Hero of the Village I
+    - Attribute Modifiers: +2.0 Armor
+    - Max Health Modifier: +4 Hearts (+8.0 max health)
+    - Materials Required to Unlock: Initial election or usurpation.
+
+  * 👑 Level 2 (The Sovereign)
+    - Potion Effects: Speed II, Strength I, Resistance I, Fire Resistance, Hero of the Village I
+    - Attribute Modifiers: +3.0 Armor, +2.0 Armor Toughness
+    - Max Health Modifier: +6 Hearts (+12.0 max health)
+    - Upgrade Cost: 32x Diamond, 16x Gold Block, 1x Ominous Bottle
+
+  * 👑 Level 3 (The Netherite Monarch)
+    - Potion Effects: Speed II, Strength II, Resistance I, Fire Resistance, Hero of the Village I
+    - Attribute Modifiers: +5.0 Armor, +3.0 Armor Toughness, +0.1 Knockback Resistance
+    - Max Health Modifier: +10 Hearts (+20.0 max health)
+    - Upgrade Cost: 4x Netherite Ingot, 64x Diamond, 1x Nether Star
+
+  * 👑 Level 4 (The Void Lord)
+    - Potion Effects: Speed II, Strength II, Resistance II, Fire Resistance, Regeneration I, Hero of the Village I
+    - Attribute Modifiers: +7.0 Armor, +4.0 Armor Toughness, +0.2 Knockback Resistance
+    - Max Health Modifier: +14 Hearts (+28.0 max health)
+    - Upgrade Cost: 2x Netherite Block, 3x Nether Star, 8x Echo Shard
+
+  * 👑 Level 5 (The Emperor - MAX TIER)
+    - Potion Effects: Speed III, Strength III, Resistance II, Fire Resistance, Regeneration II, Hero of the Village I
+    - Attribute Modifiers: +10.0 Armor, +6.0 Armor Toughness, +0.3 Knockback Resistance
+    - Max Health Modifier: +20 Hearts (+40.0 max health)
+    - Upgrade Cost: 1x Heavy Core, 1x Dragon Egg, 4x Netherite Block, 5x Nether Star
+
+
+--------------------------------------------------------------------------------
+2. 🛡️ FACTION RANKS, BUFFS & TERRITORY
+--------------------------------------------------------------------------------
+
+Kings can establish factions, recruit players, promote officers, and manage land.
+
+- Creating Factions:
+  * Costs 5,000 Silver. Run "/faction create <name>". The founder becomes Faction King.
+
+- Faction Ranks & Buffs:
+  Members receive permanent status effects based on their faction rank:
+  * 👑 King: Permanent Haste I, Fire Resistance, and Hero of the Village I.
+  * ⚡ Commander: Permanent Speed I, Haste I, Fire Resistance, and Hero of the Village I.
+  * 🛡️ Knight: Permanent Resistance I.
+  * ⚓ Recruit: Base rank, receives no permanent buffs.
+
+- Faction Outposts:
+  * Kings and Commanders can mark outposts with "/faction setoutpost <name>".
+  * The first outpost is FREE. Subsequent outposts cost 1,000 Silver.
+  * Outposts can be deleted using "/faction deleteoutpost <name>".
+  * Members can teleport to outposts with "/faction outpost <name>" (blocked in combat).
+
+- Faction Tax System:
+  * Faction Kings can set a tax rate (1% to 5%) using "/faction tax <rate>".
+  * Faction taxes apply when faction members spend Silver in the economy.
+  * Important: Taxes are generated by the system, meaning they cost the spending
+    player NO extra money.
+  * Taxed Silver goes directly into the King's personal balance.
+  * Cap: A faction can generate a maximum of 5,000 Silver in tax revenue for their
+    King per calendar day.
+
+
+--------------------------------------------------------------------------------
+3. ⚔️ PVP COMBAT RESTRAINTS & LOGGING PENALTIES
+--------------------------------------------------------------------------------
+
+To maintain competitive integrity, hitting another player or taking damage from another
+player triggers a Combat Tag.
+
+- The Tagged State:
+  * Duration: 15 seconds.
+  * Display: Shows red bold text above your hotbar: "⚔️ IN COMBAT: Xs remaining ⚔️".
+
+- Restrictions in Combat:
+  While combat tagged, players CANNOT:
+  * Teleport home (" /home", "/home tp")
+  * Teleport to shared homes (" /home tp <player>")
+  * Warp to faction outposts (" /faction outpost <name>")
+  * Request or accept teleport requests ("/tpa", "/tpaccept")
+  * Use economy commands ("/shop", "/market", "/sell", "/auction", "/bounty")
+  * Teleport randomly ("/rtp")
+
+- Combat Logging Penalty:
+  If you disconnect from the server while in combat:
+  * You drop your entire inventory (including armor and offhand slots) on the ground.
+  * If you are a King, you are instantly dethroned, and your Crown is dropped.
+
+
+--------------------------------------------------------------------------------
+4. 🎒 ENDER CHEST UPGRADES & REMOTE ACCESS
+--------------------------------------------------------------------------------
+
+Keep your items safe and access them anywhere:
+
+- Remote Access:
+  * Run "/enderchest" or "/ec" to open your Ender Chest from anywhere.
+  * Cost to Unlock: A one-time payment of 32x Diamonds.
+
+- Size Expansion:
+  * Run "/ec upgrade" to expand your remote and physical Ender Chest to double chest
+    capacity (6 rows, 54 slots).
+  * Cost to Upgrade: A one-time payment of 2x Netherite Ingots.
+  * When upgraded, any existing items in the normal chest are migrated safely.
+
+
+--------------------------------------------------------------------------------
+5. 🗺️ RANDOM TELEPORTATION (RTP)
+--------------------------------------------------------------------------------
+
+Teleport randomly to find resources or bases safely:
+
+- Command: "/rtp" (blocked while in combat).
+- Safety Mechanics:
+  * Teleports you to safe, solid coordinates within the world border.
+  * Excludes hazardous blocks such as lava, magma blocks, cacti, fire, and liquids.
+  * Safe locations are search-cached asynchronously (up to 10) to prevent server lag.
+
+
+--------------------------------------------------------------------------------
+6. 📜 DAILY CONTRACTS (QUESTS)
+--------------------------------------------------------------------------------
+
+Earn Silver and Diamonds by executing daily tasks:
+
+- Commands:
+  * Open Quest Menu: "/quest"
+  * Accept: "/quest accept <easy|medium|hard>" (Only 1 quest active at a time)
+  * Progress: "/quest status"
+  * Cancel/Abandon: "/quest cancel" or "/quest abandon"
+
+- Quest Payouts:
+  * Easy: 200 Silver (No item rewards)
+  * Medium: 500 Silver + 1x Diamond
+  * Hard: 1,000 Silver + 4x Diamonds
+
+- Quest Pools (Rotate daily based on calendar day):
+  * Easy Quests (Mine 32 Iron Ores, Mine 64 Coal Ores, Mine 32 Copper Ores, Mine 
+    16 Gold Ores, Mine 64 Redstone Ores, Hunt 12 Skeletons, Hunt 10 Spiders, 
+    Hunt 15 Creepers, Hunt 20 Zombies)
+  * Medium Quests (Hunt 10 Zombies, Hunt 8 Endermen, Hunt 15 Blazes, Hunt 12 
+    Piglins, Mine 45 Gold Ores, Mine 24 Lapis Ores, Mine 16 Nether Quartz Ores)
+  * Hard Quests (Mine 128 Diamond Ores, Mine 20 Ancient Debris, Mine 15 Emerald 
+    Ores, Hunt 4 Wither Skeletons, Hunt 6 Ghasts, Hunt 25 Drowned)
+
+
+--------------------------------------------------------------------------------
+7. 🪙 EARNING MONEY & SELLING TO THE BANK
+--------------------------------------------------------------------------------
+
+Silver (🪙) is the virtual currency of KingSMP.
+
+- Checking Appraisal Value:
+  * Hold any item in your main hand and type "/price".
+  * Displays: Item Name, Rarity (Common, Uncommon, Rare, Epic), and Bank Value.
+  * Sacred items (The Royal Crown, Dragon Egg) are priceless and cannot be priced.
+
+- Selling items:
+  * Run "/sell" to open a special GUI. Drop items inside and close to sell.
+  * Capping rule: Bank sell price is capped at 50% of the Server Shop's buy price.
+
+- Bank Payouts:
+
+  * Resources and Blocks:
+    - Netherite Block: 900.0 Silver
+    - Netherite Ingot: 100.0 Silver
+    - Ancient Debris: 25.0 Silver
+    - Diamond Block: 18.0 Silver
+    - Diamond: 2.0 Silver
+    - Gold Block / Emerald Block: 9.0 Silver
+    - Gold Ingot / Emerald: 1.0 Silver
+    - Obsidian: 1.0 Silver
+    - Amethyst Block: 2.0 Silver
+    - Amethyst Shard / Prismarine Shard / Prismarine Crystals: 0.5 Silver
+
+  * Unique Drops & Key Gear:
+    - Mace: 800.0 Silver
+    - Elytra: 600.0 Silver
+    - Heavy Core: 500.0 Silver
+    - Beacon: 350.0 Silver
+    - Nether Star: 250.0 Silver
+    - Conduit: 200.0 Silver
+    - Heart of the Sea / Netherite Upgrade template: 150.0 Silver
+    - Totem of Undying / Trident / Dragon Head: 100.0 Silver
+    - Music Discs (all kinds): 50.0 Silver
+    - Trim Smithing Templates (all kinds): 30.0 Silver
+    - Budding Amethyst: 15.0 Silver
+    - Spyglass / Goat Horn: 10.0 Silver
+
+  * Consumables & Mob Drops:
+    - Enchanted Golden Apple: 60.0 Silver
+    - Golden Apple: 4.0 Silver
+    - Wither Skeleton Skull: 20.0 Silver
+    - Ominous Bottle / Ominous Trial Key: 15.0 Silver
+    - Shulker Shell: 10.0 Silver
+    - Trial Key / Sponge / Wet Sponge / Ghast Tear: 5.0 Silver
+    - Breeze Rod: 3.0 Silver
+    - Phantom Membrane: 2.0 Silver
+    - Slime Ball: 1.0 Silver
+    - Experience Bottle: 0.3 Silver
+    - Echo Shard: 7.5 Silver
+    - Shulker Boxes (all colors): 25.0 Silver
+
+  * Generic Logs, Wood, and Quartz:
+    - 1 Silver per 16 items (0.0625 Silver each)
+
+  * Generic Ingots/Coal (Iron Ingot, Copper Ingot, Coal, Charcoal):
+    - 1 Silver per 32 items (0.03125 Silver each)
+
+  * Generic Blocks (Glass, Terracotta, Bricks):
+    - 1 Silver per 32 items (0.03125 Silver each)
+
+  * Foliage/Seeds (Leaves, Saplings, Seeds):
+    - 1 Silver per 32 items (0.03125 Silver each)
+
+  * Bulk Blocks (Dirt, Sand, Gravel, Cobblestone, Stone, Planks, Netherrack,
+    End Stone, Basalt, Deepslate, Andesite, Diorite, Granite, Tuff, Ice):
+    - 1 Silver per 64 items (0.015625 Silver each)
+
+  * Tools, Weapons, and Armor:
+    - Value scales with tier: Netherite (300 base), Diamond (100 base), Iron /
+      Shield (20 base), Chainmail (12 base), Stone (10 base), Wood/Leather/Gold 
+      (5 base). Others (10 base).
+    - Enchantment Payout: Adds +15.0 Silver to the item's value per level of
+      enchantment.
+    - Durability Scaling: Payout is scaled linearly by the remaining durability
+      ratio: (maxDurability - damage) / maxDurability.
+
+  * Miscellaneous Items (Determined by Item Rarity):
+    - Epic: 500.0 Silver
+    - Rare: 50.0 Silver
+    - Uncommon: 5.0 Silver
+    - Common: 0.1 Silver (1 Silver per 10 items)
+
+
+--------------------------------------------------------------------------------
+8. 🛒 GLOBAL SHOP PURCHASES
+--------------------------------------------------------------------------------
+
+Spend your Silver (🪙) in the "/shop" GUI (blocked in combat). It features multiple
+tabs, searching, filtering, and page navigation.
+
+- Resources Tab:
+  * Totem of Undying: 250 Silver
+  * Enchanted Golden Apple: 120 Silver
+  * 8x Golden Apple: 64 Silver
+  * 4x Echo Shard: 60 Silver
+  * 1x Ominous Bottle: 40 Silver
+  * 16x Wind Charge: 16 Silver
+  * 16x Ender Pearl: 16 Silver
+  * 64x Firework Rocket: 12 Silver
+  * 16x Cobweb: 10 Silver
+  * 64x Bottle o' Enchanting: 40 Silver
+  * 1x Shulker Box: 60 Silver
+
+- Spawners Tab:
+  Spawner items are placed/activated by right-clicking.
+
+  * Tiered Spawner Loot Caches:
+    Right-clicking opens the Mob Loot Selection GUI. Choose Zombie, Skeleton,
+    Creeper, Spider, Blaze, Enderman, Slime, or Witch.
+    - Yields base drops multiplied by the Tier number.
+    - Grants a rare drop chance equal to: Tier * 10% (Tier 5 = 50% rare drops).
+    - Tier 1: 100 Silver
+    - Tier 2: 250 Silver
+    - Tier 3: 500 Silver
+    - Tier 4: 750 Silver
+    - Tier 5: 1,000 Silver
+
+  * Gamble Spawners:
+    Right-clicking starts an interactive roulette wheel screen. Item in hand is
+    consumed. The wheel shifts loot items and selects the middle item after 25 ticks.
+    - You can click the Skip Roll button (Feather) in slot 8 to end the spin early.
+    - Overworld Gamble Spawner: 600 Silver
+    - Nether Gamble Spawner: 800 Silver
+    - Trial Chamber Gamble Spawner: 1,000 Silver
+    - Ore & Ingot Gamble Spawner: 1,200 Silver
+    - End Gamble Spawner: 1,500 Silver
+
+
+--------------------------------------------------------------------------------
+9. 🎲 GAMBLE SPAWNER LOOT POOLS & PROBABILITIES
+--------------------------------------------------------------------------------
+
+Below are the exact reward pools and chances for each Gamble Spawner:
+
+* 🟢 Overworld Gamble Spawner (Cost: 600 Silver)
+  - Legendary (0.5% chance):
+    * 2x Enchanted Golden Apple
+  - Epic (9.5% chance):
+    * Golden Apple: 10+ (starts at 10, keeps adding 1 with 40% chance per step)
+    * Ominous Bottle: 8+ (starts at 8, keeps adding 1 with 40% chance per step)
+    * Diamond: 80+ (starts at 80, keeps adding 1 with 40% chance per step)
+  - Rare (25.0% chance):
+    * Diamond: 60+ (starts at 60, keeps adding 1 with 40% chance per step)
+    * Gold Block: 16+ (starts at 16, keeps adding 1 with 40% chance per step)
+    * 1x Armor Trim Template (Sentry, Vex, Wild, Ward, Shaper, Host, Raiser, Wayfinder, Bolt, or Flow)
+  - Common (65.0% chance):
+    * Gold Block: 10+ (starts at 10, keeps adding 1 with 40% chance per step)
+    * Diamond: 40+ (starts at 40, keeps adding 1 with 40% chance per step)
+
+* 🔴 Nether Gamble Spawner (Cost: 800 Silver)
+  - Legendary (0.5% chance):
+    * 9x Wither Skeleton Skull
+  - Epic (9.5% chance):
+    * Netherite Ingot: 4+ (starts at 4, keeps adding 1 with 40% chance per step)
+    * 1x Nether Armor Trim Template (Snout, Rib, or Spire)
+  - Rare (25.0% chance):
+    * Netherite Scrap: 20+ (starts at 20, keeps adding 1 with 40% chance per step)
+    * Gold Block: 16+ (starts at 16, keeps adding 1 with 40% chance per step)
+  - Common (65.0% chance):
+    * Netherite Scrap: 12+ (starts at 12, keeps adding 1 with 40% chance per step)
+    * Gold Block: 8+ (starts at 8, keeps adding 1 with 40% chance per step)
+
+* 🟣 End Gamble Spawner (Cost: 1,500 Silver)
+  - Legendary (0.5% chance):
+    * 1x Elytra
+  - Epic (9.5% chance):
+    * 2x Nether Star
+    * 1x Random Shulker Box (any of the 17 colors)
+  - Rare (25.0% chance):
+    * Echo Shard: 5+ (starts at 5, keeps adding 1 with 40% chance per step)
+    * Shulker Shell: 18+ (starts at 18, keeps adding 1 with 40% chance per step)
+  - Common (65.0% chance):
+    * Shulker Shell: 12+ (starts at 12, keeps adding 1 with 40% chance per step)
+    * Echo Shard: 3+ (starts at 3, keeps adding 1 with 40% chance per step)
+
+* 🟡 Ore & Ingot Gamble Spawner (Cost: 1,200 Silver)
+  - Legendary (0.5% chance):
+    * Netherite Ingot: 4+ (starts at 4, keeps adding 1 with 40% chance per step)
+  - Epic (9.5% chance):
+    * Diamond Block: 10+ (starts at 10, keeps adding 1 with 40% chance per step)
+    * Ancient Debris: 8+ (starts at 8, keeps adding 1 with 40% chance per step)
+  - Rare (25.0% chance):
+    * Diamond: 60+ (starts at 60, keeps adding 1 with 40% chance per step)
+    * Emerald Block: 15+ (starts at 15, keeps adding 1 with 40% chance per step)
+    * Gold Block: 15+ (starts at 15, keeps adding 1 with 40% chance per step)
+  - Common (65.0% chance):
+    * Diamond: 40+ (starts at 40, keeps adding 1 with 40% chance per step)
+    * Gold Block: 10+ (starts at 10, keeps adding 1 with 40% chance per step)
+    * Emerald Block: 10+ (starts at 10, keeps adding 1 with 40% chance per step)
+
+* 🔵 Trial Chamber Gamble Spawner (Cost: 1,000 Silver)
+  - Mace Legendary (0.1% chance):
+    * 1x Mace
+  - Heavy Core Epic (1.0% chance):
+    * 1x Heavy Core
+  - Keys and Templates Rare (34.0% chance):
+    * Breeze Rod: 16+ (starts at 16, keeps adding 1 with 40% chance per step)
+    * Trial Key: 16+ (starts at 16, keeps adding 1 with 40% chance per step)
+    * Ominous Trial Key: 8+ (starts at 8, keeps adding 1 with 40% chance per step)
+    * 1x Smithing Template (Flow Armor Trim or Bolt Armor Trim)
+  - Common Trial Rewards (64.9% chance):
+    * Breeze Rod: 10+ (starts at 10, keeps adding 1 with 40% chance per step)
+    * Trial Key: 8+ (starts at 8, keeps adding 1 with 40% chance per step)
+
+
+--------------------------------------------------------------------------------
+10. 📝 PLAYER & ECONOMY COMMAND REFERENCE
+--------------------------------------------------------------------------------
+
+Below is the complete registry of commands available on the server.
+
+* Crown & Election:
+  - "/vote <player>": Vote for a player during an active election.
+  - "/myvote": View your current vote.
+  - "/status": View the current Kings, reign durations, and active election phase.
+  - "/leaderboard": Check the longest-reigning Kings in server history.
+  - "/upgrade": Upgrades the Royal Crown in your inventory if you have materials.
+
+* Faction Management:
+  - "/faction create <name>": Create a new Faction (costs 5,000 Silver).
+  - "/faction invite <player>": Invite a player to your faction.
+  - "/faction accept": Accept a pending invitation.
+  - "/faction promote <player> <rank>": Promotes a member (COMMANDER, KNIGHT, RECRUIT) (King only).
+  - "/faction kick <player>": Kicks a player from the Faction (King/Commanders only).
+  - "/faction view": Open faction GUI showing members and status.
+  - "/faction leave": Leave your current faction.
+  - "/faction disband": Disband the Faction (King only).
+  - "/faction setoutpost <name>": Mark faction outpost at your location (First free, others cost 1,000 Silver).
+  - "/faction outpost <name>": Teleport to a faction outpost (blocked in combat).
+  - "/faction deleteoutpost <name>": Delete a faction outpost.
+  - "/faction listoutposts": List all outposts in your faction.
+  - "/faction tax [rate]": Check or set faction tax rate (1% to 5%) (King only).
+
+* Economy & Commerce:
+  - "/shop": Opens the Global Market GUI.
+  - "/shop sell <price>": List the item in your hand on the player market.
+  - "/market cancel <id>": Cancel player market listing and return item.
+  - "/sell": Opens the Bank Sell GUI to sell items.
+  - "/price": Appraise the item in your main hand.
+  - "/pay <player> <amount>": Transfer Silver from your balance to another player.
+  - "/bal" or "/balance": View your current virtual Silver balance.
+  - "/bounty add <player> <amount>": Place a bounty on a target player (minimum 50 Silver).
+  - "/bounty list": List all active player bounties.
+
+* Teleportation & Utility:
+  - "/rtp": Randomly teleport within safe bounds (blocked in combat).
+  - "/home set": Set your home point.
+  - "/home tp" or "/home": Teleport to your home point (blocked in combat).
+  - "/home share <player>": Toggles sharing your home access with another player.
+  - "/home tp <player>": Teleport to a shared home (blocked in combat).
+  - "/home delete": Delete your current home point.
+  - "/tpa <player>": Request to teleport to a player (60s cooldown per player, 10s general spam protection).
+  - "/tpaccept [player]": Accept teleport request (blocked in combat).
+  - "/tpadeny [player]": Deny teleport request (blocked in combat).
+  - "/tpauto": Toggle auto-accepting teleport requests (blocked in combat).
+  - "/enderchest" or "/ec": Open remote Ender Chest (Costs 32 Diamonds to unlock).
+  - "/ec upgrade" or "/enderchest upgrade": Expand Ender Chest to 54 slots (Costs 2 Netherite Ingots).
+  - "/quest": Open Daily Contracts GUI.
+  - "/quest accept <easy|medium|hard>": Accept a daily quest.
+  - "/quest status": View your active quest details.
+  - "/quest cancel" or "/quest abandon": Abandon active quest.
+
+
+--------------------------------------------------------------------------------
+11. ⚙️ ADMIN & OPERATOR COMMAND REFERENCE
+--------------------------------------------------------------------------------
+
+All admin commands are subcommands of "/king" and require OP status:
+
+- "/king forceupgrade <player> <level>": Instantly set player's crown to level 1-5.
+- "/king election start [seconds]": Start an election (default is 10 minutes/12000 ticks).
+- "/king election end": End an active election immediately.
+- "/king reset": Wipe all active kings, votes, and reset election states.
+- "/king crown <player>": Instantly crown a player (if open slots).
+- "/king dethrone <player>": Instantly remove a player's crown.
+- "/king mint <player> <amount>": Grant Silver to a player.
+- "/king remove <player> <amount>": Deduct Silver from a player's balance.
+- "/king set <player> <amount>": Force-set a player's Silver balance.
+- "/king bounty set <player> <amount>": Force-set a player's bounty amount.
+- "/king bounty remove <player>": Clear player's bounty.
+- "/king unlockender <player> [large]": Instantly unlock regular or large remote Ender Chest for player.
+- "/king quest view <player>": Check active quest details for player.
+- "/king quest reset <player>": Clear player's active quest.
+- "/king quest complete <player>": Force-complete player's active quest and award rewards.
+- "/king market remove <id>": Remove a listing from player market by ID.
+- "/king reign set <player> <ticks>": Set total reign ticks for player.
+- "/king reign clear <player>": Clear total reign ticks for player.
+- "/king combat clear <player>": Instantly clear a player's combat tag.
+================================================================================
