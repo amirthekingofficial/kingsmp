@@ -368,16 +368,25 @@ public class EconomyCommands {
         // Consumables & Mob Drops
         CUSTOM_PRICES.put(net.minecraft.world.item.Items.ENCHANTED_GOLDEN_APPLE, 60.0);
         CUSTOM_PRICES.put(net.minecraft.world.item.Items.GOLDEN_APPLE, 4.0);
+        CUSTOM_PRICES.put(net.minecraft.world.item.Items.GOLDEN_CARROT, 0.25);
         CUSTOM_PRICES.put(net.minecraft.world.item.Items.WITHER_SKELETON_SKULL, 20.0);
         CUSTOM_PRICES.put(net.minecraft.world.item.Items.SHULKER_SHELL, 10.0);
         CUSTOM_PRICES.put(net.minecraft.world.item.Items.GHAST_TEAR, 5.0);
         CUSTOM_PRICES.put(net.minecraft.world.item.Items.PHANTOM_MEMBRANE, 2.0);
         CUSTOM_PRICES.put(net.minecraft.world.item.Items.SLIME_BALL, 1.0);
+        CUSTOM_PRICES.put(net.minecraft.world.item.Items.SLIME_BLOCK, 1.5);
+        CUSTOM_PRICES.put(net.minecraft.world.item.Items.HONEY_BLOCK, 1.0);
         CUSTOM_PRICES.put(net.minecraft.world.item.Items.SPONGE, 5.0);
         CUSTOM_PRICES.put(net.minecraft.world.item.Items.WET_SPONGE, 5.0);
         CUSTOM_PRICES.put(net.minecraft.world.item.Items.OBSIDIAN, 1.0);
+        CUSTOM_PRICES.put(net.minecraft.world.item.Items.CRYING_OBSIDIAN, 1.5);
         CUSTOM_PRICES.put(net.minecraft.world.item.Items.EXPERIENCE_BOTTLE, 0.3);
         CUSTOM_PRICES.put(net.minecraft.world.item.Items.ECHO_SHARD, 7.5);
+        CUSTOM_PRICES.put(net.minecraft.world.item.Items.DRAGON_BREATH, 4.0);
+        CUSTOM_PRICES.put(net.minecraft.world.item.Items.WITHER_ROSE, 5.0);
+        CUSTOM_PRICES.put(net.minecraft.world.item.Items.SADDLE, 10.0);
+        CUSTOM_PRICES.put(net.minecraft.world.item.Items.NAME_TAG, 2.5);
+        CUSTOM_PRICES.put(net.minecraft.world.item.Items.BUNDLE, 10.0);
         
         // Shulker Boxes (all colors)
         CUSTOM_PRICES.put(net.minecraft.world.item.Items.SHULKER_BOX, 25.0);

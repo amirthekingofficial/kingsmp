@@ -573,32 +573,76 @@ public class KingSMPMod implements ModInitializer {
     public static void loadServerShop() {
         java.util.UUID serverId = java.util.UUID.fromString("00000000-0000-0000-0000-000000000000");
 
-        // --- CATEGORY 1: ARTIFACTS / HIGH-TIER ---
-        marketManager.addListing(
-                new MarketListing(serverId, "SERVER SHOP", new ItemStack(Items.TOTEM_OF_UNDYING), 250, true));
-        marketManager.addListing(
-                new MarketListing(serverId, "SERVER SHOP", new ItemStack(Items.ENCHANTED_GOLDEN_APPLE, 1), 120, true));
-        marketManager
-                .addListing(new MarketListing(serverId, "SERVER SHOP", new ItemStack(Items.GOLDEN_APPLE, 8), 64, true));
+        marketManager.getActiveListings().removeIf(listing -> listing.isServerShop() && !listing.getItemToSell().is(Items.SPAWNER));
 
-        // --- CATEGORY 2: MATERIALS ---
-        marketManager
-                .addListing(new MarketListing(serverId, "SERVER SHOP", new ItemStack(Items.ECHO_SHARD, 4), 60, true));
-        marketManager.addListing(
-                new MarketListing(serverId, "SERVER SHOP", new ItemStack(Items.OMINOUS_BOTTLE, 1), 40, true));
+        // ── 1. LEGENDARY ARTIFACTS & BOSS WEAPONS ──
+        marketManager.addListing(new MarketListing(serverId, "SERVER SHOP", new ItemStack(Items.TOTEM_OF_UNDYING, 1), 250, true));
+        marketManager.addListing(new MarketListing(serverId, "SERVER SHOP", new ItemStack(Items.ELYTRA, 1), 1500, true));
+        marketManager.addListing(new MarketListing(serverId, "SERVER SHOP", new ItemStack(Items.MACE, 1), 1800, true));
+        marketManager.addListing(new MarketListing(serverId, "SERVER SHOP", new ItemStack(Items.HEAVY_CORE, 1), 1200, true));
+        marketManager.addListing(new MarketListing(serverId, "SERVER SHOP", new ItemStack(Items.NETHER_STAR, 1), 600, true));
+        marketManager.addListing(new MarketListing(serverId, "SERVER SHOP", new ItemStack(Items.BEACON, 1), 800, true));
+        marketManager.addListing(new MarketListing(serverId, "SERVER SHOP", new ItemStack(Items.TRIDENT, 1), 250, true));
+        marketManager.addListing(new MarketListing(serverId, "SERVER SHOP", new ItemStack(Items.HEART_OF_THE_SEA, 1), 350, true));
+        marketManager.addListing(new MarketListing(serverId, "SERVER SHOP", new ItemStack(Items.CONDUIT, 1), 500, true));
 
-        // --- CATEGORY 3: PVP & MOVEMENT ---
-        marketManager
-                .addListing(new MarketListing(serverId, "SERVER SHOP", new ItemStack(Items.WIND_CHARGE, 16), 16, true));
-        marketManager
-                .addListing(new MarketListing(serverId, "SERVER SHOP", new ItemStack(Items.ENDER_PEARL, 16), 16, true));
-        marketManager.addListing(
-                new MarketListing(serverId, "SERVER SHOP", new ItemStack(Items.FIREWORK_ROCKET, 64), 12, true));
+        // ── 2. HIGH-TIER MINERALS & TEMPLATES ──
+        marketManager.addListing(new MarketListing(serverId, "SERVER SHOP", new ItemStack(Items.NETHERITE_UPGRADE_SMITHING_TEMPLATE, 1), 350, true));
+        marketManager.addListing(new MarketListing(serverId, "SERVER SHOP", new ItemStack(Items.NETHERITE_INGOT, 1), 250, true));
+        marketManager.addListing(new MarketListing(serverId, "SERVER SHOP", new ItemStack(Items.ANCIENT_DEBRIS, 4), 200, true));
+        marketManager.addListing(new MarketListing(serverId, "SERVER SHOP", new ItemStack(Items.DIAMOND_BLOCK, 4), 144, true));
+        marketManager.addListing(new MarketListing(serverId, "SERVER SHOP", new ItemStack(Items.DIAMOND, 16), 64, true));
+        marketManager.addListing(new MarketListing(serverId, "SERVER SHOP", new ItemStack(Items.GOLD_BLOCK, 8), 144, true));
+        marketManager.addListing(new MarketListing(serverId, "SERVER SHOP", new ItemStack(Items.EMERALD_BLOCK, 8), 144, true));
+        marketManager.addListing(new MarketListing(serverId, "SERVER SHOP", new ItemStack(Items.IRON_BLOCK, 16), 64, true));
+        marketManager.addListing(new MarketListing(serverId, "SERVER SHOP", new ItemStack(Items.AMETHYST_BLOCK, 16), 64, true));
+        marketManager.addListing(new MarketListing(serverId, "SERVER SHOP", new ItemStack(Items.BUDDING_AMETHYST, 1), 40, true));
+
+        // ── 3. TRIAL CHAMBER & RARE MOB REAGENTS ──
+        marketManager.addListing(new MarketListing(serverId, "SERVER SHOP", new ItemStack(Items.OMINOUS_BOTTLE, 1), 40, true));
+        marketManager.addListing(new MarketListing(serverId, "SERVER SHOP", new ItemStack(Items.OMINOUS_TRIAL_KEY, 2), 60, true));
+        marketManager.addListing(new MarketListing(serverId, "SERVER SHOP", new ItemStack(Items.TRIAL_KEY, 4), 40, true));
+        marketManager.addListing(new MarketListing(serverId, "SERVER SHOP", new ItemStack(Items.BREEZE_ROD, 8), 48, true));
+        marketManager.addListing(new MarketListing(serverId, "SERVER SHOP", new ItemStack(Items.ECHO_SHARD, 4), 60, true));
+        marketManager.addListing(new MarketListing(serverId, "SERVER SHOP", new ItemStack(Items.WITHER_SKELETON_SKULL, 3), 120, true));
+        marketManager.addListing(new MarketListing(serverId, "SERVER SHOP", new ItemStack(Items.GHAST_TEAR, 8), 80, true));
+        marketManager.addListing(new MarketListing(serverId, "SERVER SHOP", new ItemStack(Items.SHULKER_SHELL, 4), 80, true));
+        marketManager.addListing(new MarketListing(serverId, "SERVER SHOP", new ItemStack(Items.SHULKER_BOX, 1), 60, true));
+        marketManager.addListing(new MarketListing(serverId, "SERVER SHOP", new ItemStack(Items.SPONGE, 8), 80, true));
+        marketManager.addListing(new MarketListing(serverId, "SERVER SHOP", new ItemStack(Items.PHANTOM_MEMBRANE, 8), 32, true));
+
+        // ── 4. GOLDEN FOOD & COMBAT REGEN ──
+        marketManager.addListing(new MarketListing(serverId, "SERVER SHOP", new ItemStack(Items.ENCHANTED_GOLDEN_APPLE, 1), 120, true));
+        marketManager.addListing(new MarketListing(serverId, "SERVER SHOP", new ItemStack(Items.GOLDEN_APPLE, 8), 64, true));
+        marketManager.addListing(new MarketListing(serverId, "SERVER SHOP", new ItemStack(Items.GOLDEN_CARROT, 64), 32, true));
+
+        // ── 5. COMBAT, MOVEMENT & RAIDING ──
+        marketManager.addListing(new MarketListing(serverId, "SERVER SHOP", new ItemStack(Items.WIND_CHARGE, 16), 16, true));
+        marketManager.addListing(new MarketListing(serverId, "SERVER SHOP", new ItemStack(Items.ENDER_PEARL, 16), 16, true));
+        marketManager.addListing(new MarketListing(serverId, "SERVER SHOP", new ItemStack(Items.FIREWORK_ROCKET, 64), 12, true));
         marketManager.addListing(new MarketListing(serverId, "SERVER SHOP", new ItemStack(Items.COBWEB, 16), 10, true));
-        marketManager.addListing(
-                new MarketListing(serverId, "SERVER SHOP", new ItemStack(Items.EXPERIENCE_BOTTLE, 64), 40, true));
-        marketManager
-                .addListing(new MarketListing(serverId, "SERVER SHOP", new ItemStack(Items.SHULKER_BOX, 1), 60, true));
+        marketManager.addListing(new MarketListing(serverId, "SERVER SHOP", new ItemStack(Items.EXPERIENCE_BOTTLE, 64), 40, true));
+        marketManager.addListing(new MarketListing(serverId, "SERVER SHOP", new ItemStack(Items.SPECTRAL_ARROW, 32), 24, true));
+        marketManager.addListing(new MarketListing(serverId, "SERVER SHOP", new ItemStack(Items.ARROW, 64), 8, true));
+        marketManager.addListing(new MarketListing(serverId, "SERVER SHOP", new ItemStack(Items.DRAGON_BREATH, 8), 64, true));
+
+        // ── 6. VITAL REDSTONE & ADVANCED BUILDING ──
+        marketManager.addListing(new MarketListing(serverId, "SERVER SHOP", new ItemStack(Items.OBSIDIAN, 64), 128, true));
+        marketManager.addListing(new MarketListing(serverId, "SERVER SHOP", new ItemStack(Items.CRYING_OBSIDIAN, 16), 48, true));
+        marketManager.addListing(new MarketListing(serverId, "SERVER SHOP", new ItemStack(Items.SLIME_BLOCK, 16), 48, true));
+        marketManager.addListing(new MarketListing(serverId, "SERVER SHOP", new ItemStack(Items.HONEY_BLOCK, 16), 32, true));
+        marketManager.addListing(new MarketListing(serverId, "SERVER SHOP", new ItemStack(Items.SEA_LANTERN, 32), 32, true));
+        marketManager.addListing(new MarketListing(serverId, "SERVER SHOP", new ItemStack(Items.GLOWSTONE, 32), 24, true));
+        marketManager.addListing(new MarketListing(serverId, "SERVER SHOP", new ItemStack(Items.QUARTZ_BLOCK, 64), 32, true));
+
+        // ── 7. UTILITY, ADVENTURE & FLORA ──
+        marketManager.addListing(new MarketListing(serverId, "SERVER SHOP", new ItemStack(Items.BUNDLE, 1), 30, true));
+        marketManager.addListing(new MarketListing(serverId, "SERVER SHOP", new ItemStack(Items.SADDLE, 1), 25, true));
+        marketManager.addListing(new MarketListing(serverId, "SERVER SHOP", new ItemStack(Items.NAME_TAG, 4), 20, true));
+        marketManager.addListing(new MarketListing(serverId, "SERVER SHOP", new ItemStack(Items.LEAD, 4), 10, true));
+        marketManager.addListing(new MarketListing(serverId, "SERVER SHOP", new ItemStack(Items.WITHER_ROSE, 4), 40, true));
+        marketManager.addListing(new MarketListing(serverId, "SERVER SHOP", new ItemStack(Items.CHORUS_FRUIT, 32), 16, true));
+        marketManager.addListing(new MarketListing(serverId, "SERVER SHOP", new ItemStack(Items.NETHER_WART, 16), 16, true));
     }
 
     // ── PREMADE SPAWNER SHOP ────────────────────────────────────────────────
@@ -606,6 +650,8 @@ public class KingSMPMod implements ModInitializer {
     public static void loadSpawnerShop() {
         java.util.UUID serverId = java.util.UUID.fromString("00000000-0000-0000-0000-000000000000");
         String shopCategory = "SPAWNER SHOP";
+
+        marketManager.getActiveListings().removeIf(listing -> listing.isServerShop() && listing.getItemToSell().is(Items.SPAWNER));
 
         MarketListing tier1 = new MarketListing(serverId, shopCategory, createLootSpawner(1), 100, true);
         MarketListing tier2 = new MarketListing(serverId, shopCategory, createLootSpawner(2), 250, true);
