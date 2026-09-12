@@ -185,6 +185,43 @@ public class KingSMPMod implements ModInitializer {
                                 }
                             }
                         }
+
+                        // 3. Hunter Profession XP
+                        if (!killer.isCreative()) {
+                            int hunterXp = 0;
+                            String killedType = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(killedEntity.getType()).getPath();
+
+                            if (killedEntity instanceof net.minecraft.world.entity.boss.wither.WitherBoss
+                                    || killedEntity instanceof net.minecraft.world.entity.boss.enderdragon.EnderDragon
+                                    || killedEntity instanceof net.minecraft.world.entity.monster.warden.Warden
+                                    || killedEntity instanceof net.minecraft.world.entity.monster.ElderGuardian) {
+                                hunterXp = 150;
+                            } else if (killedType.equals("blaze") || killedType.equals("wither_skeleton") || killedType.equals("enderman")
+                                    || killedType.equals("ghast") || killedType.equals("piglin_brute") || killedType.equals("shulker")
+                                    || killedType.equals("evoker") || killedType.equals("ravager") || killedType.equals("guardian")) {
+                                hunterXp = 35;
+                            } else if (killedEntity instanceof net.minecraft.world.entity.monster.Monster) {
+                                hunterXp = 15;
+                            } else if (killedEntity instanceof net.minecraft.world.entity.animal.Animal) {
+                                hunterXp = 5;
+                            }
+
+                            if (hunterXp > 0) {
+                                net.kingsmp.professions.ProfessionManager.addXp(killer, net.kingsmp.professions.ProfessionType.HUNTER, hunterXp);
+
+                                // Hunter Perk: Bonus drop / bounty chance
+                                int hunterLvl = net.kingsmp.professions.ProfessionManager.getLevel(killer.getUUID(), net.kingsmp.professions.ProfessionType.HUNTER);
+                                if (hunterLvl >= 2) {
+                                    float bonusChance = (hunterLvl >= 5) ? 0.25f : 0.05f * (hunterLvl - 1);
+                                    if (killer.getRandom().nextFloat() < bonusChance) {
+                                        killer.sendOverlayMessage(
+                                                net.minecraft.network.chat.Component.literal("🏹 Apex Predator! Extra mob bounty claimed.")
+                                                        .withStyle(net.minecraft.ChatFormatting.RED));
+                                        dataManager.addSilver(killer.getUUID(), 5 * hunterLvl);
+                                    }
+                                }
+                            }
+                        }
                     }
                 });
 

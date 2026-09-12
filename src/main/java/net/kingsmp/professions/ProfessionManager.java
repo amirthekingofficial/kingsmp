@@ -54,26 +54,41 @@ public class ProfessionManager {
             finalAmount *= (1.0 - KingSMPConfig.multiclassXpPenalty); // 50% XP penalty
         }
 
-        int currentXp = getXp(uuid, type) + (int) Math.max(1, Math.round(finalAmount));
+        int gained = (int) Math.max(1, Math.round(finalAmount));
+        int currentXp = getXp(uuid, type) + gained;
         playerXp.computeIfAbsent(uuid, k -> new EnumMap<>(ProfessionType.class)).put(type, currentXp);
 
-        // Check level up
-        int nextLevel = currentLevel + 1;
-        if (nextLevel <= KingSMPConfig.professionMaxLevel && currentXp >= XP_THRESHOLDS[nextLevel]) {
-            levels.put(type, nextLevel);
-            KingSMPMod.saveNow();
+        // Action bar feedback when not in active PvP/PvE combat
+        if (!net.kingsmp.events.CombatTracker.isInCombat(player)) {
+            int targetXp = (currentLevel < KingSMPConfig.professionMaxLevel) ? XP_THRESHOLDS[currentLevel + 1] : XP_THRESHOLDS[KingSMPConfig.professionMaxLevel];
+            player.sendOverlayMessage(
+                    Component.literal("+" + gained + " " + type.getDisplayName() + " XP ")
+                            .withStyle(type.getColor(), ChatFormatting.BOLD)
+                            .append(Component.literal("[" + currentXp + "/" + targetXp + "]").withStyle(ChatFormatting.GRAY)));
+        }
 
-            String newTitle = type.getLevelTitle(nextLevel);
+        // Check level up (supports multi-level jumps if bulk XP gained)
+        boolean leveledUp = false;
+        while (currentLevel < KingSMPConfig.professionMaxLevel && currentXp >= XP_THRESHOLDS[currentLevel + 1]) {
+            currentLevel++;
+            levels.put(type, currentLevel);
+            leveledUp = true;
+
+            String newTitle = type.getLevelTitle(currentLevel);
             player.sendSystemMessage(Component.literal("🎉 PROFESSION LEVEL UP! ").withStyle(type.getColor(), ChatFormatting.BOLD)
                     .append(Component.literal("You are now a ").withStyle(ChatFormatting.WHITE))
                     .append(Component.literal(newTitle).withStyle(type.getColor(), ChatFormatting.BOLD)));
 
-            if (nextLevel == KingSMPConfig.professionMaxLevel) {
+            if (currentLevel == KingSMPConfig.professionMaxLevel) {
                 player.sendSystemMessage(Component.literal("★ MASTER UNLOCK: ").withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD)
                         .append(Component.literal(type.getMasterUnlockDescription()).withStyle(ChatFormatting.YELLOW)));
             }
 
             KingSMPMod.playSoundToPlayer(player, SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, 1.0f, 1.0f);
+        }
+
+        if (leveledUp) {
+            KingSMPMod.saveNow();
         }
     }
 

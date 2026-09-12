@@ -759,6 +759,10 @@ public class ShopScreenHandler extends ChestMenu {
                             KingSMPMod.playSoundToPlayer(seller, net.minecraft.sounds.SoundEvents.EXPERIENCE_ORB_PICKUP, 1.0f, 1.0f);
                         }
                     }
+                    // Grant Merchant XP to buyer
+                    if (player instanceof ServerPlayer serverBuyer) {
+                        net.kingsmp.professions.ProfessionManager.addXp(serverBuyer, net.kingsmp.professions.ProfessionType.MERCHANT, Math.max(5, finalPrice / 20));
+                    }
                 }
                 refreshShop();
             } else {

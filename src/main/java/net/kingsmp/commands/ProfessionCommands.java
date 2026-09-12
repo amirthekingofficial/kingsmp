@@ -15,6 +15,10 @@ public class ProfessionCommands {
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("trade")
+                .executes(ctx -> {
+                    ServerPlayer player = ctx.getSource().getPlayerOrException();
+                    return showProfessionBoard(ctx.getSource(), player);
+                })
 
                 // ── /trade help ──
                 .then(Commands.literal("help").executes(ctx -> {
@@ -65,6 +69,9 @@ public class ProfessionCommands {
                     return ProfessionManager.triggerVeinSense(player) ? 1 : 0;
                 }))
         );
+
+        dispatcher.register(Commands.literal("trades")
+                .executes(ctx -> showProfessionBoard(ctx.getSource(), ctx.getSource().getPlayerOrException())));
     }
 
     private static int showProfessionBoard(CommandSourceStack src, ServerPlayer target) {

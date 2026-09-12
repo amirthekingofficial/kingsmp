@@ -31,4 +31,12 @@ public abstract class SlotMixin {
             }
         }
     }
+
+    @Inject(method = "onTake", at = @At("HEAD"))
+    private void kingsmp$onTakeSlotItem(net.minecraft.world.entity.player.Player player, ItemStack stack, org.spongepowered.asm.mixin.injection.callback.CallbackInfo ci) {
+        if (!player.level().isClientSide() && player instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
+            Slot slot = (Slot) (Object) this;
+            net.kingsmp.events.ProfessionHookManager.handleSlotTake(serverPlayer, slot, stack);
+        }
+    }
 }

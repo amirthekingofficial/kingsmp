@@ -20,7 +20,7 @@ public abstract class BlockMixin {
     @Inject(method = "playerDestroy", at = @At("HEAD"))
     private void kingsmp$onPlayerDestroy(Level world, Player player, BlockPos pos, BlockState state, BlockEntity blockEntity, ItemStack tool, CallbackInfo ci) {
         if (!world.isClientSide() && player instanceof ServerPlayer serverPlayer) {
-            PlayerBlockBreakHook.handleBlockBreak(serverPlayer, state);
+            PlayerBlockBreakHook.handleBlockBreak(serverPlayer, pos, state, tool);
         }
     }
 }

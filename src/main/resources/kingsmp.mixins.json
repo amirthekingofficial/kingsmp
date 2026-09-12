@@ -10,7 +10,8 @@
     "ShulkerBoxSlotMixin",
     "BundleItemMixin",
     "ServerGamePacketListenerImplMixin",
-    "BlockMixin"
+    "BlockMixin",
+    "FishingHookMixin"
   ],
   "injectors": {
     "defaultRequire": 1

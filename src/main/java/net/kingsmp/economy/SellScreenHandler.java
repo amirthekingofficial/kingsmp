@@ -69,6 +69,8 @@ public class SellScreenHandler extends ChestMenu {
 
         if (finalEarnings > 0) {
             KingSMPMod.dataManager.addSilver(serverPlayer.getUUID(), finalEarnings);
+            int merchantXp = Math.max(5, Math.min(100, finalEarnings / 2));
+            net.kingsmp.professions.ProfessionManager.addXp(serverPlayer, net.kingsmp.professions.ProfessionType.MERCHANT, merchantXp);
             KingSMPMod.saveNow();
             serverPlayer.sendSystemMessage(Component.literal("💰 Sold ")
                     .append(Component.literal(String.valueOf(soldCount)).withStyle(ChatFormatting.YELLOW))
