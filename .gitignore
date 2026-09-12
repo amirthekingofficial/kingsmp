@@ -38,3 +38,11 @@ hs_err_*.log
 replay_*.log
 *.hprof
 *.jfr
+
+# docs
+
+kingsmp_guide.txt
+smp_ideas.md
+kingsmp_new.md
+KingSMP_Guide.md
+KingSMP_Master_Specification_And_Balance.md

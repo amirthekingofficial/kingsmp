@@ -49,8 +49,22 @@ public class TpaCommands {
                 .then(Commands.argument("player", EntityArgument.player())
                         .executes(ctx -> cmdTpDeny(ctx, EntityArgument.getPlayer(ctx, "player")))));
 
+        dispatcher.register(Commands.literal("tpdeny")
+                .executes(ctx -> cmdTpDeny(ctx, null))
+                .then(Commands.argument("player", EntityArgument.player())
+                        .executes(ctx -> cmdTpDeny(ctx, EntityArgument.getPlayer(ctx, "player")))));
+
+        dispatcher.register(Commands.literal("tpacancel")
+                .executes(TpaCommands::cmdTpaCancel));
+
         dispatcher.register(Commands.literal("tpauto")
                 .executes(ctx -> cmdTpAuto(ctx, dataManager)));
+    }
+
+    public static void clearCooldowns(UUID uuid) {
+        if (uuid == null) return;
+        tpaCooldowns.remove(uuid);
+        tpaTargetCooldowns.remove(uuid);
     }
 
     private static int cmdTpa(CommandContext<CommandSourceStack> ctx, KingDataManager dataManager) {
@@ -98,6 +112,9 @@ public class TpaCommands {
                             target.getXRot(), true);
                     sender.sendSystemMessage(Component.literal("✨ Teleported to ").withStyle(ChatFormatting.AQUA)
                             .append(target.getName().copy().withStyle(ChatFormatting.GOLD)));
+                }, () -> {
+                    clearCooldowns(sender.getUUID());
+                    sender.sendSystemMessage(Component.literal("⏱️ TPA cooldown has been reset.").withStyle(ChatFormatting.GRAY));
                 });
                 
                 tpaCooldowns.put(sender.getUUID(), now + 10000); // 10 seconds general spam protection
@@ -213,6 +230,9 @@ public class TpaCommands {
                         true);
                 sender.sendSystemMessage(Component.literal("✨ Arrived at ").withStyle(ChatFormatting.AQUA)
                         .append(target.getName().copy().withStyle(ChatFormatting.GOLD)));
+            }, () -> {
+                clearCooldowns(sender.getUUID());
+                sender.sendSystemMessage(Component.literal("⏱️ TPA cooldown has been reset.").withStyle(ChatFormatting.GRAY));
             });
 
         } catch (Exception e) {
@@ -252,7 +272,7 @@ public class TpaCommands {
                     senderUuidToDeny = requests.keySet().iterator().next();
                 } else {
                     src.sendFailure(
-                            Component.literal("You have multiple pending requests. Please specify who: /tpadeny <player>"));
+                            Component.literal("You have multiple pending requests. Please specify who: /tpdeny <player>"));
                     return 0;
                 }
             }
@@ -262,6 +282,8 @@ public class TpaCommands {
                 tpaRequests.remove(target.getUUID());
             }
 
+            clearCooldowns(senderUuidToDeny);
+
             ServerPlayer sender = src.getServer().getPlayerList().getPlayer(senderUuidToDeny);
 
             src.sendSuccess(() -> Component.literal("❌ Denied teleport request.").withStyle(ChatFormatting.YELLOW), false);
@@ -269,11 +291,44 @@ public class TpaCommands {
                 sender.sendSystemMessage(
                         Component.literal("❌ ").withStyle(ChatFormatting.RED)
                                 .append(target.getName().copy().withStyle(ChatFormatting.GOLD))
-                                .append(Component.literal(" denied your teleport request.").withStyle(ChatFormatting.RED)));
+                                .append(Component.literal(" denied your teleport request. Cooldown reset.").withStyle(ChatFormatting.RED)));
             }
 
         } catch (Exception e) {
             src.sendFailure(Component.literal("Error denying teleport request."));
+        }
+        return 1;
+    }
+
+    private static int cmdTpaCancel(CommandContext<CommandSourceStack> ctx) {
+        CommandSourceStack src = ctx.getSource();
+        try {
+            ServerPlayer sender = src.getPlayerOrException();
+            UUID senderUuid = sender.getUUID();
+
+            boolean cancelled = false;
+            for (Map<UUID, Long> requests : tpaRequests.values()) {
+                if (requests.remove(senderUuid) != null) {
+                    cancelled = true;
+                }
+            }
+
+            if (net.kingsmp.events.TeleportManager.isChanneling(senderUuid)) {
+                net.kingsmp.events.TeleportManager.cancelChannel(sender, "Cancelled by user");
+                cancelled = true;
+            }
+
+            clearCooldowns(senderUuid);
+
+            if (cancelled) {
+                src.sendSuccess(() -> Component.literal("❌ Teleport request cancelled and cooldown reset.")
+                        .withStyle(ChatFormatting.YELLOW), false);
+            } else {
+                src.sendSuccess(() -> Component.literal("⏱️ TPA cooldown has been reset.")
+                        .withStyle(ChatFormatting.GRAY), false);
+            }
+        } catch (Exception e) {
+            src.sendFailure(Component.literal("Error cancelling TPA request."));
         }
         return 1;
     }

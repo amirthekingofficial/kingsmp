@@ -26,15 +26,17 @@ public class TeleportManager {
         final double startX, startY, startZ;
         final String destinationName;
         final Runnable onComplete;
+        final Runnable onCancel;
         int ticksRemaining;
 
-        Channel(ServerPlayer player, String destinationName, Runnable onComplete, int ticks) {
+        Channel(ServerPlayer player, String destinationName, Runnable onComplete, Runnable onCancel, int ticks) {
             this.uuid = player.getUUID();
             this.startX = player.getX();
             this.startY = player.getY();
             this.startZ = player.getZ();
             this.destinationName = destinationName;
             this.onComplete = onComplete;
+            this.onCancel = onCancel;
             this.ticksRemaining = ticks;
         }
     }
@@ -46,6 +48,10 @@ public class TeleportManager {
     }
 
     public static void startChannel(ServerPlayer player, String destinationName, Runnable onComplete) {
+        startChannel(player, destinationName, onComplete, null);
+    }
+
+    public static void startChannel(ServerPlayer player, String destinationName, Runnable onComplete, Runnable onCancel) {
         if (CombatTracker.isInCombat(player)) {
             player.sendSystemMessage(Component.literal("❌ Cannot teleport while in combat! (" + CombatTracker.getRemainingSeconds(player) + "s remaining)")
                     .withStyle(ChatFormatting.RED));
@@ -59,7 +65,7 @@ public class TeleportManager {
         }
 
         int ticks = warmupSeconds * 20;
-        activeChannels.put(player.getUUID(), new Channel(player, destinationName, onComplete, ticks));
+        activeChannels.put(player.getUUID(), new Channel(player, destinationName, onComplete, onCancel, ticks));
 
         player.sendSystemMessage(Component.literal("⏳ Teleporting to " + destinationName + " in " + warmupSeconds + "s... Stand still!")
                 .withStyle(ChatFormatting.YELLOW));
@@ -67,8 +73,10 @@ public class TeleportManager {
 
     public static void cancelChannel(UUID uuid, String reason) {
         Channel channel = activeChannels.remove(uuid);
-        if (channel != null && reason != null) {
-            // Channel cancelled
+        if (channel != null && channel.onCancel != null) {
+            try {
+                channel.onCancel.run();
+            } catch (Exception ignored) {}
         }
     }
 
@@ -78,6 +86,11 @@ public class TeleportManager {
             player.sendSystemMessage(Component.literal("❌ Teleportation cancelled: " + reason)
                     .withStyle(ChatFormatting.RED, ChatFormatting.BOLD));
             KingSMPMod.playSoundToPlayer(player, SoundEvents.VILLAGER_NO, 1.0f, 1.0f);
+            if (channel.onCancel != null) {
+                try {
+                    channel.onCancel.run();
+                } catch (Exception ignored) {}
+            }
         }
     }
 
@@ -93,6 +106,11 @@ public class TeleportManager {
             ServerPlayer player = server.getPlayerList().getPlayer(uuid);
             if (player == null || player.isRemoved()) {
                 iterator.remove();
+                if (channel.onCancel != null) {
+                    try {
+                        channel.onCancel.run();
+                    } catch (Exception ignored) {}
+                }
                 continue;
             }
 
@@ -101,6 +119,11 @@ public class TeleportManager {
                 player.sendSystemMessage(Component.literal("❌ Teleportation cancelled: Combat tag initiated!")
                         .withStyle(ChatFormatting.RED, ChatFormatting.BOLD));
                 KingSMPMod.playSoundToPlayer(player, SoundEvents.VILLAGER_NO, 1.0f, 1.0f);
+                if (channel.onCancel != null) {
+                    try {
+                        channel.onCancel.run();
+                    } catch (Exception ignored) {}
+                }
                 continue;
             }
 
@@ -113,6 +136,11 @@ public class TeleportManager {
                 player.sendSystemMessage(Component.literal("❌ Teleportation cancelled: You moved!")
                         .withStyle(ChatFormatting.RED, ChatFormatting.BOLD));
                 KingSMPMod.playSoundToPlayer(player, SoundEvents.VILLAGER_NO, 1.0f, 1.0f);
+                if (channel.onCancel != null) {
+                    try {
+                        channel.onCancel.run();
+                    } catch (Exception ignored) {}
+                }
                 continue;
             }
 
