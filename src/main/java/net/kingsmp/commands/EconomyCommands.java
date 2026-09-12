@@ -465,15 +465,15 @@ public class EconomyCommands {
                 ITEM_VALUE_CACHE.put(item, v);
                 baseValue = v;
             } else if (itemName.contains("iron_ingot") || itemName.contains("copper_ingot") || itemName.contains("coal")) {
-                double v = 1.0 / 32.0;
+                double v = 1.0 / 24.0; // 24 items = 1.0 Silver
                 ITEM_VALUE_CACHE.put(item, v);
                 baseValue = v;
             } else if (itemName.contains("glass") || itemName.contains("terracotta") || itemName.contains("brick")) {
-                double v = 1.0 / 32.0;
+                double v = 1.0 / 24.0; // 24 items = 1.0 Silver
                 ITEM_VALUE_CACHE.put(item, v);
                 baseValue = v;
             } else if (itemName.contains("leaves") || itemName.contains("sapling") || itemName.contains("seed")) {
-                double v = 1.0 / 32.0;
+                double v = 1.0 / 24.0; // 24 items = 1.0 Silver
                 ITEM_VALUE_CACHE.put(item, v);
                 baseValue = v;
             } else if (itemName.contains("dirt") || itemName.contains("sand") || itemName.contains("gravel") ||
@@ -481,7 +481,7 @@ public class EconomyCommands {
                     itemName.contains("netherrack") || itemName.contains("end_stone") || itemName.contains("basalt") ||
                     itemName.contains("deepslate") || itemName.contains("andesite") || itemName.contains("diorite") ||
                     itemName.contains("granite") || itemName.contains("tuff") || itemName.contains("ice")) {
-                double v = 1.0 / 64.0;
+                double v = 1.0 / 48.0; // 48 items = 1.0 Silver
                 ITEM_VALUE_CACHE.put(item, v);
                 baseValue = v;
             } else {
@@ -491,7 +491,7 @@ public class EconomyCommands {
                     case EPIC -> 500.0;
                     case RARE -> 50.0;
                     case UNCOMMON -> 5.0;
-                    case COMMON -> 0.1; // 1 Silver per 10 items for anything else in the game!
+                    case COMMON -> 0.125; // 8 items = 1.0 Silver
                 };
                 ITEM_VALUE_CACHE.put(item, v);
                 baseValue = v;

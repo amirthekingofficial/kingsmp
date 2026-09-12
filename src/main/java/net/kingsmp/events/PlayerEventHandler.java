@@ -232,30 +232,41 @@ public class PlayerEventHandler {
         if (data.isKing(player.getUUID())) {
             ItemStack crown = net.kingsmp.crowns.CrownManager.getCrownInInventory(player);
             if (crown == null || crown.isEmpty()) {
-                net.kingsmp.crowns.CrownType type = net.kingsmp.crowns.CrownType.SKULLS;
-                if (net.kingsmp.factions.FactionManager.isFactionLeader(player)) {
-                    type = net.kingsmp.crowns.CrownType.END;
-                } else {
-                    var path = net.kingsmp.factions.FactionManager.getPlayerPath(player);
-                    if (path != null) {
-                        type = switch (path) {
-                            case MILITARY -> net.kingsmp.crowns.CrownType.SKULLS;
-                            case LOGISTICS -> net.kingsmp.crowns.CrownType.GOLD;
-                            case OCCULT -> net.kingsmp.crowns.CrownType.LAVA;
-                            case SCOUT -> net.kingsmp.crowns.CrownType.ICE;
-                        };
+                if (!data.hasReceivedInitialCrown(player.getUUID())) {
+                    net.kingsmp.crowns.CrownType type = net.kingsmp.crowns.CrownType.SKULLS;
+                    if (net.kingsmp.factions.FactionManager.isFactionLeader(player)) {
+                        type = net.kingsmp.crowns.CrownType.END;
+                    } else {
+                        var path = net.kingsmp.factions.FactionManager.getPlayerPath(player);
+                        if (path != null) {
+                            type = switch (path) {
+                                case MILITARY -> net.kingsmp.crowns.CrownType.SKULLS;
+                                case LOGISTICS -> net.kingsmp.crowns.CrownType.GOLD;
+                                case OCCULT -> net.kingsmp.crowns.CrownType.LAVA;
+                                case SCOUT -> net.kingsmp.crowns.CrownType.ICE;
+                            };
+                        }
                     }
+                    crown = KingSMPMod.createCrown(type, 1);
+                    if (!player.getInventory().add(crown)) {
+                        player.drop(crown, false);
+                    }
+                    data.setReceivedInitialCrown(player.getUUID(), true);
+                    KingSMPMod.saveNowSync();
+                    player.sendSystemMessage(
+                            Component.literal("👑 Your " + type.getDisplayName() + " has been bestowed upon you!")
+                                    .withStyle(ChatFormatting.GOLD));
+                } else {
+                    KingSMPMod.LOGGER.warn("King {} logged in without a crown in inventory, but initial crown was already granted.", player.getScoreboardName());
+                    player.sendSystemMessage(
+                            Component.literal("⚠️ You are King, but your Crown is not in your inventory. Crowns cannot be duplicated. If lost, please contact an Admin.")
+                                    .withStyle(ChatFormatting.RED));
                 }
-                crown = KingSMPMod.createCrown(type, 1);
-                if (!player.getInventory().add(crown)) {
-                    player.drop(crown, false);
-                }
-                player.sendSystemMessage(
-                        Component.literal("👑 Your " + type.getDisplayName() + " has been restored!")
-                                .withStyle(ChatFormatting.GOLD));
             }
 
-            net.kingsmp.crowns.CrownManager.tickPlayer(player, KingSMPMod.getCrownType(crown), KingSMPMod.getCrownStep(crown));
+            if (crown != null && !crown.isEmpty()) {
+                net.kingsmp.crowns.CrownManager.tickPlayer(player, KingSMPMod.getCrownType(crown), KingSMPMod.getCrownStep(crown));
+            }
         }
     }
 
@@ -278,7 +289,7 @@ public class PlayerEventHandler {
 
             // Drop all inventory items
             player.getInventory().dropAll();
-            KingSMPMod.saveNow();
+            KingSMPMod.saveNowSync();
         }
 
         CombatTracker.removePlayer(player.getUUID());

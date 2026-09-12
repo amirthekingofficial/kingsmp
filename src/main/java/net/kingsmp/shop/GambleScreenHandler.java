@@ -14,6 +14,9 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.item.component.CustomData;
+import net.minecraft.world.item.Item;
 import net.kingsmp.KingSMPMod;
 
 import java.util.*;
@@ -146,38 +149,64 @@ public class GambleScreenHandler extends ChestMenu {
 
     private void finishSpin() {
         KingSMPMod.LOGGER.info("Spin finished! gambleType='" + gambleType + "' totalShifts=" + totalShifts);
-        for (int i = 9; i <= 17; i++) {
-            KingSMPMod.LOGGER.info("Final Slot " + i + " contains: " + guiInventory.getItem(i));
-        }
-        
-        // Award middle item (slot 13)
-        ItemStack reward = guiInventory.getItem(13).copy();
-        ItemStack rewardCopy = reward.copy(); // Create a copy before player.getInventory().add(reward) consumes/shrinks it
-        
-        // Remove the spawner from their hand
-        ItemStack heldItem = player.getItemInHand(hand);
-        if (KingSMPMod.isGambleSpawner(heldItem)) {
-            heldItem.shrink(1);
-            
-            // Deliver reward
-            if (!player.getInventory().add(reward)) {
-                player.drop(rewardCopy, false);
-            }
 
-            KingSMPMod.playSoundToPlayer(player, SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, 1.0f, 1.0f);
-            KingSMPMod.playSoundToPlayer(player, SoundEvents.PLAYER_LEVELUP, 1.0f, 1.0f);
-            
+        // Security check: Verify the player is still holding the matching crate ticket to prevent ticket-swap exploit
+        ItemStack heldItem = player.getItemInHand(hand);
+        if (!KingSMPMod.isGambleSpawner(heldItem) || !KingSMPMod.getGambleType(heldItem).equalsIgnoreCase(this.gambleType)) {
             if (player instanceof ServerPlayer serverPlayer) {
-                serverPlayer.sendSystemMessage(Component.literal("🎉 You won: ")
-                        .withStyle(ChatFormatting.GREEN, ChatFormatting.BOLD)
-                        .append(rewardCopy.getHoverName())
-                        .append(" x" + rewardCopy.getCount()));
+                serverPlayer.sendSystemMessage(Component.literal("❌ Spin canceled: You swapped or removed your " + this.gambleType.toUpperCase() + " Gamble Crate!")
+                        .withStyle(ChatFormatting.RED, ChatFormatting.BOLD));
+            }
+            discard();
+            if (player instanceof ServerPlayer serverPlayer) {
+                serverPlayer.closeContainer();
+            }
+            return;
+        }
+
+        // Consume 1 matching crate ticket
+        heldItem.shrink(1);
+
+        // Award middle item (slot 13) and unpack bundles safely
+        ItemStack rewardDisplay = guiInventory.getItem(13).copy();
+        List<ItemStack> deliveredItems = unpackReward(rewardDisplay, gambleType);
+
+        for (ItemStack item : deliveredItems) {
+            deliverStackSafely(player, item);
+        }
+
+        KingSMPMod.playSoundToPlayer(player, SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, 1.0f, 1.0f);
+        KingSMPMod.playSoundToPlayer(player, SoundEvents.PLAYER_LEVELUP, 1.0f, 1.0f);
+
+        if (player instanceof ServerPlayer serverPlayer) {
+            serverPlayer.sendSystemMessage(Component.literal("🎉 You won: ")
+                    .withStyle(ChatFormatting.GREEN, ChatFormatting.BOLD)
+                    .append(rewardDisplay.getHoverName()));
+            for (ItemStack item : deliveredItems) {
+                serverPlayer.sendSystemMessage(Component.literal("  + ")
+                        .withStyle(ChatFormatting.YELLOW)
+                        .append(item.getHoverName())
+                        .append(" x" + item.getCount()));
             }
         }
 
         discard();
         if (player instanceof ServerPlayer serverPlayer) {
             serverPlayer.closeContainer();
+        }
+    }
+
+    private static void deliverStackSafely(Player player, ItemStack stack) {
+        if (stack == null || stack.isEmpty()) return;
+        int remaining = stack.getCount();
+        int maxStack = stack.getMaxStackSize();
+        while (remaining > 0) {
+            int give = Math.min(remaining, maxStack);
+            ItemStack chunk = stack.copyWithCount(give);
+            if (!player.getInventory().add(chunk)) {
+                player.drop(chunk, false);
+            }
+            remaining -= give;
         }
     }
 
@@ -213,136 +242,394 @@ public class GambleScreenHandler extends ChestMenu {
 
     private static final Random RANDOM = new Random();
 
-    private static int getUncappedAmount(int min, double chanceToIncrease) {
-        int amount = min;
-        while (RANDOM.nextDouble() < chanceToIncrease) {
-            amount++;
-        }
-        return amount;
+    private static final Item[] OVERWORLD_TRIMS = {
+            Items.SENTRY_ARMOR_TRIM_SMITHING_TEMPLATE,
+            Items.VEX_ARMOR_TRIM_SMITHING_TEMPLATE,
+            Items.WILD_ARMOR_TRIM_SMITHING_TEMPLATE,
+            Items.WARD_ARMOR_TRIM_SMITHING_TEMPLATE,
+            Items.SHAPER_ARMOR_TRIM_SMITHING_TEMPLATE,
+            Items.HOST_ARMOR_TRIM_SMITHING_TEMPLATE,
+            Items.RAISER_ARMOR_TRIM_SMITHING_TEMPLATE,
+            Items.WAYFINDER_ARMOR_TRIM_SMITHING_TEMPLATE
+    };
+
+    private static final Item[] NETHER_TRIMS = {
+            Items.SNOUT_ARMOR_TRIM_SMITHING_TEMPLATE,
+            Items.RIB_ARMOR_TRIM_SMITHING_TEMPLATE,
+            Items.SPIRE_ARMOR_TRIM_SMITHING_TEMPLATE
+    };
+
+    private static final Item[] TRIAL_TRIMS = {
+            Items.FLOW_ARMOR_TRIM_SMITHING_TEMPLATE,
+            Items.BOLT_ARMOR_TRIM_SMITHING_TEMPLATE
+    };
+
+    public static Item getRandomOverworldTrim() {
+        return OVERWORLD_TRIMS[RANDOM.nextInt(OVERWORLD_TRIMS.length)];
     }
- 
-    private static net.minecraft.world.item.Item getRandomShulkerBoxItem() {
-        List<net.minecraft.world.item.Item> boxes = new ArrayList<>();
+
+    public static Item getRandomNetherTrim() {
+        return NETHER_TRIMS[RANDOM.nextInt(NETHER_TRIMS.length)];
+    }
+
+    public static Item getRandomTrialTrim() {
+        return TRIAL_TRIMS[RANDOM.nextInt(TRIAL_TRIMS.length)];
+    }
+
+    public static Item getRandomShulkerBoxItem() {
+        List<Item> boxes = new ArrayList<>();
         boxes.add(Items.SHULKER_BOX);
         boxes.addAll(Items.DYED_SHULKER_BOX.asList());
         return boxes.get(RANDOM.nextInt(boxes.size()));
     }
 
-    private static ItemStack getRandomLootItem(String type) {
-        List<ItemStack> pool = new ArrayList<>();
- 
+    public static ItemStack createRewardDisplay(Item icon, int displayCount, String title, ChatFormatting color, String bundleId, int trueCount, List<String> bundleLines) {
+        ItemStack stack = new ItemStack(icon, Math.min(displayCount, 64));
+        if (title != null && !title.isEmpty()) {
+            stack.set(DataComponents.CUSTOM_NAME, Component.literal(title).withStyle(color, ChatFormatting.BOLD));
+        }
+        net.minecraft.nbt.CompoundTag tag = new net.minecraft.nbt.CompoundTag();
+        if (bundleId != null && !bundleId.isEmpty()) {
+            tag.putString("RewardBundleId", bundleId);
+        }
+        if (trueCount > 0) {
+            tag.putInt("TrueCount", trueCount);
+        }
+        stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
+
+        List<Component> lore = new ArrayList<>();
+        if (bundleLines != null && !bundleLines.isEmpty()) {
+            lore.add(Component.literal("Includes:").withStyle(ChatFormatting.YELLOW));
+            for (String line : bundleLines) {
+                lore.add(Component.literal(" • " + line).withStyle(ChatFormatting.WHITE));
+            }
+        } else if (trueCount > 64) {
+            lore.add(Component.literal("Total Amount: " + trueCount + "x").withStyle(ChatFormatting.GOLD));
+        }
+        if (!lore.isEmpty()) {
+            stack.set(DataComponents.LORE, new net.minecraft.world.item.component.ItemLore(lore));
+        }
+        return stack;
+    }
+
+    public static List<ItemStack> unpackReward(ItemStack display, String crateType) {
+        List<ItemStack> items = new ArrayList<>();
+        CustomData customData = display.get(DataComponents.CUSTOM_DATA);
+        String bundleId = "";
+        if (customData != null && customData.copyTag().contains("RewardBundleId")) {
+            bundleId = customData.copyTag().getString("RewardBundleId").orElse("");
+        }
+
+        switch (bundleId) {
+            case "overworld_legendary":
+                items.add(new ItemStack(Items.ENCHANTED_GOLDEN_APPLE, 5));
+                items.add(new ItemStack(Items.DIAMOND_BLOCK, 100));
+                items.add(new ItemStack(Items.GOLD_BLOCK, 50));
+                items.add(new ItemStack(Items.TOTEM_OF_UNDYING, 5));
+                return items;
+            case "overworld_epic":
+                items.add(new ItemStack(Items.DIAMOND_BLOCK, 75));
+                items.add(new ItemStack(Items.GOLDEN_APPLE, 10));
+                items.add(new ItemStack(Items.OMINOUS_BOTTLE, 8));
+                return items;
+            case "overworld_rare_diamond":
+                items.add(new ItemStack(Items.DIAMOND_BLOCK, 30));
+                items.add(new ItemStack(getRandomOverworldTrim(), 1));
+                return items;
+            case "overworld_rare_emerald":
+                items.add(new ItemStack(Items.EMERALD_BLOCK, 60));
+                items.add(new ItemStack(getRandomOverworldTrim(), 1));
+                return items;
+
+            case "nether_legendary":
+                items.add(new ItemStack(Items.NETHERITE_INGOT, 32));
+                items.add(new ItemStack(Items.WITHER_SKELETON_SKULL, 16));
+                items.add(new ItemStack(Items.NETHERITE_UPGRADE_SMITHING_TEMPLATE, 3));
+                return items;
+            case "nether_epic":
+                items.add(new ItemStack(Items.NETHERITE_INGOT, 20));
+                items.add(new ItemStack(getRandomNetherTrim(), 1));
+                return items;
+            case "nether_rare_gold":
+                items.add(new ItemStack(Items.GOLD_BLOCK, 80));
+                return items;
+
+            case "end_legendary":
+                items.add(new ItemStack(Items.ELYTRA, 1));
+                items.add(new ItemStack(Items.NETHER_STAR, 25));
+                items.add(new ItemStack(getRandomShulkerBoxItem(), 2));
+                return items;
+            case "end_epic":
+                items.add(new ItemStack(Items.NETHER_STAR, 15));
+                return items;
+            case "end_rare_shell":
+                items.add(new ItemStack(Items.SHULKER_SHELL, 135));
+                return items;
+            case "end_rare_echo":
+                items.add(new ItemStack(Items.ECHO_SHARD, 180));
+                return items;
+            case "end_common_echo":
+                items.add(new ItemStack(Items.ECHO_SHARD, 80));
+                return items;
+
+            case "ore_legendary":
+                items.add(new ItemStack(Items.NETHERITE_INGOT, 40));
+                items.add(new ItemStack(Items.DIAMOND_BLOCK, 80));
+                items.add(new ItemStack(Items.ANCIENT_DEBRIS, 20));
+                return items;
+            case "ore_epic":
+                items.add(new ItemStack(Items.DIAMOND_BLOCK, 10));
+                items.add(new ItemStack(Items.ANCIENT_DEBRIS, 40));
+                items.add(new ItemStack(Items.NETHERITE_INGOT, 18));
+                return items;
+            case "ore_rare_emerald":
+                items.add(new ItemStack(Items.EMERALD_BLOCK, 120));
+                return items;
+
+            case "trial_legendary":
+                items.add(new ItemStack(Items.MACE, 1));
+                items.add(new ItemStack(Items.HEAVY_CORE, 8));
+                items.add(new ItemStack(Items.NETHERITE_INGOT, 4));
+                return items;
+            case "trial_epic":
+                items.add(new ItemStack(Items.HEAVY_CORE, 5));
+                return items;
+            case "trial_rare_ominous":
+                items.add(new ItemStack(Items.OMINOUS_TRIAL_KEY, 60));
+                items.add(new ItemStack(getRandomTrialTrim(), 1));
+                return items;
+            case "trial_rare_standard":
+                items.add(new ItemStack(Items.TRIAL_KEY, 180));
+                items.add(new ItemStack(getRandomTrialTrim(), 1));
+                return items;
+            case "trial_common_key":
+                items.add(new ItemStack(Items.TRIAL_KEY, 80));
+                return items;
+            case "trial_common_breeze":
+                items.add(new ItemStack(Items.BREEZE_ROD, 133));
+                return items;
+
+            default:
+                if (customData != null && customData.copyTag().contains("TrueCount")) {
+                    int trueCount = customData.copyTag().getInt("TrueCount").orElse(display.getCount());
+                    items.add(display.copyWithCount(trueCount));
+                } else {
+                    items.add(display.copy());
+                }
+                return items;
+        }
+    }
+
+    public static ItemStack getRandomLootItem(String type) {
+        int roll = RANDOM.nextInt(1000);
+
         switch (type.toLowerCase()) {
             case "overworld": {
-                int roll = RANDOM.nextInt(1000);
                 if (roll < 5) { // 0.5% Legendary
-                    pool.add(new ItemStack(Items.ENCHANTED_GOLDEN_APPLE, 3));
-                    pool.add(new ItemStack(Items.DIAMOND_BLOCK, 8));
+                    return createRewardDisplay(
+                            Items.ENCHANTED_GOLDEN_APPLE, 1,
+                            "★ The Golden Hoard ★", ChatFormatting.GOLD,
+                            "overworld_legendary", 1,
+                            List.of("5x Enchanted Golden Apple", "100x Diamond Block", "50x Gold Block", "5x Totem of Undying")
+                    );
                 } else if (roll < 100) { // 9.5% Epic
-                    pool.add(new ItemStack(Items.GOLDEN_APPLE, getUncappedAmount(8, 0.3)));
-                    pool.add(new ItemStack(Items.OMINOUS_BOTTLE, getUncappedAmount(4, 0.3)));
-                    pool.add(new ItemStack(Items.DIAMOND, getUncappedAmount(24, 0.3)));
+                    return createRewardDisplay(
+                            Items.GOLDEN_APPLE, 10,
+                            "★ Overworld Vault ★", ChatFormatting.LIGHT_PURPLE,
+                            "overworld_epic", 1,
+                            List.of("75x Diamond Block", "10x Golden Apple", "8x Ominous Bottle")
+                    );
                 } else if (roll < 350) { // 25.0% Rare
-                    pool.add(new ItemStack(Items.DIAMOND, getUncappedAmount(12, 0.3)));
-                    pool.add(new ItemStack(Items.GOLD_BLOCK, getUncappedAmount(4, 0.3)));
-                    pool.add(new ItemStack(Items.SENTRY_ARMOR_TRIM_SMITHING_TEMPLATE, 1));
-                    pool.add(new ItemStack(Items.VEX_ARMOR_TRIM_SMITHING_TEMPLATE, 1));
-                    pool.add(new ItemStack(Items.WILD_ARMOR_TRIM_SMITHING_TEMPLATE, 1));
-                    pool.add(new ItemStack(Items.WARD_ARMOR_TRIM_SMITHING_TEMPLATE, 1));
-                    pool.add(new ItemStack(Items.SHAPER_ARMOR_TRIM_SMITHING_TEMPLATE, 1));
-                    pool.add(new ItemStack(Items.HOST_ARMOR_TRIM_SMITHING_TEMPLATE, 1));
-                    pool.add(new ItemStack(Items.RAISER_ARMOR_TRIM_SMITHING_TEMPLATE, 1));
-                    pool.add(new ItemStack(Items.WAYFINDER_ARMOR_TRIM_SMITHING_TEMPLATE, 1));
-                    pool.add(new ItemStack(Items.BOLT_ARMOR_TRIM_SMITHING_TEMPLATE, 1));
-                    pool.add(new ItemStack(Items.FLOW_ARMOR_TRIM_SMITHING_TEMPLATE, 1));
+                    if (RANDOM.nextBoolean()) {
+                        return createRewardDisplay(
+                                Items.DIAMOND_BLOCK, 30,
+                                "★ 30x Diamond Block & Trim ★", ChatFormatting.AQUA,
+                                "overworld_rare_diamond", 30,
+                                List.of("30x Diamond Block", "1x Overworld Armor Trim")
+                        );
+                    } else {
+                        return createRewardDisplay(
+                                Items.EMERALD_BLOCK, 60,
+                                "★ 60x Emerald Block & Trim ★", ChatFormatting.AQUA,
+                                "overworld_rare_emerald", 60,
+                                List.of("60x Emerald Block", "1x Overworld Armor Trim")
+                        );
+                    }
                 } else { // 65.0% Common
-                    pool.add(new ItemStack(Items.DIAMOND, getUncappedAmount(6, 0.3)));
-                    pool.add(new ItemStack(Items.GOLD_BLOCK, getUncappedAmount(2, 0.3)));
+                    if (RANDOM.nextBoolean()) {
+                        return new ItemStack(Items.DIAMOND_BLOCK, 13);
+                    } else {
+                        return new ItemStack(Items.GOLD_BLOCK, 27);
+                    }
                 }
-                break;
             }
- 
+
             case "nether": {
-                int roll = RANDOM.nextInt(1000);
                 if (roll < 5) { // 0.5% Legendary
-                    pool.add(new ItemStack(Items.NETHERITE_INGOT, 4));
-                    pool.add(new ItemStack(Items.WITHER_SKELETON_SKULL, 3));
+                    return createRewardDisplay(
+                            Items.NETHERITE_INGOT, 32,
+                            "★ Nether Overlord ★", ChatFormatting.GOLD,
+                            "nether_legendary", 32,
+                            List.of("32x Netherite Ingot", "16x Wither Skeleton Skull", "3x Netherite Upgrade Template")
+                    );
                 } else if (roll < 100) { // 9.5% Epic
-                    pool.add(new ItemStack(Items.NETHERITE_INGOT, 1));
-                    pool.add(new ItemStack(Items.NETHERITE_SCRAP, getUncappedAmount(8, 0.3)));
-                    pool.add(new ItemStack(Items.SNOUT_ARMOR_TRIM_SMITHING_TEMPLATE, 1));
-                    pool.add(new ItemStack(Items.RIB_ARMOR_TRIM_SMITHING_TEMPLATE, 1));
-                    pool.add(new ItemStack(Items.SPIRE_ARMOR_TRIM_SMITHING_TEMPLATE, 1));
+                    return createRewardDisplay(
+                            Items.NETHERITE_INGOT, 20,
+                            "★ Netherite Cache & Trim ★", ChatFormatting.LIGHT_PURPLE,
+                            "nether_epic", 20,
+                            List.of("20x Netherite Ingot", "1x Nether Armor Trim")
+                    );
                 } else if (roll < 350) { // 25.0% Rare
-                    pool.add(new ItemStack(Items.NETHERITE_SCRAP, getUncappedAmount(5, 0.3)));
-                    pool.add(new ItemStack(Items.GOLD_BLOCK, getUncappedAmount(6, 0.3)));
+                    if (RANDOM.nextBoolean()) {
+                        return new ItemStack(Items.NETHERITE_SCRAP, 29);
+                    } else {
+                        return createRewardDisplay(
+                                Items.GOLD_BLOCK, 64,
+                                "★ 80x Gold Block ★", ChatFormatting.AQUA,
+                                "nether_rare_gold", 80,
+                                List.of("80x Gold Block")
+                        );
+                    }
                 } else { // 65.0% Common
-                    pool.add(new ItemStack(Items.NETHERITE_SCRAP, getUncappedAmount(2, 0.3)));
-                    pool.add(new ItemStack(Items.GOLD_BLOCK, getUncappedAmount(3, 0.3)));
+                    if (RANDOM.nextBoolean()) {
+                        return new ItemStack(Items.NETHERITE_SCRAP, 13);
+                    } else {
+                        return new ItemStack(Items.GOLD_BLOCK, 36);
+                    }
                 }
-                break;
             }
- 
+
             case "end": {
-                int roll = RANDOM.nextInt(1000);
                 if (roll < 5) { // 0.5% Legendary
-                    pool.add(new ItemStack(Items.ELYTRA, 1));
+                    return createRewardDisplay(
+                            Items.ELYTRA, 1,
+                            "★ Cosmic Monarch ★", ChatFormatting.GOLD,
+                            "end_legendary", 1,
+                            List.of("1x Elytra", "25x Nether Star", "2x Shulker Box")
+                    );
                 } else if (roll < 100) { // 9.5% Epic
-                    pool.add(new ItemStack(Items.NETHER_STAR, 1));
-                    pool.add(new ItemStack(getRandomShulkerBoxItem(), 1));
+                    return createRewardDisplay(
+                            Items.NETHER_STAR, 15,
+                            "★ Star Cluster ★", ChatFormatting.LIGHT_PURPLE,
+                            "end_epic", 15,
+                            List.of("15x Nether Star")
+                    );
                 } else if (roll < 350) { // 25.0% Rare
-                    pool.add(new ItemStack(Items.ECHO_SHARD, getUncappedAmount(4, 0.3)));
-                    pool.add(new ItemStack(Items.SHULKER_SHELL, getUncappedAmount(10, 0.3)));
+                    if (RANDOM.nextBoolean()) {
+                        return createRewardDisplay(
+                                Items.SHULKER_SHELL, 64,
+                                "★ 135x Shulker Shell ★", ChatFormatting.AQUA,
+                                "end_rare_shell", 135,
+                                List.of("135x Shulker Shell")
+                        );
+                    } else {
+                        return createRewardDisplay(
+                                Items.ECHO_SHARD, 64,
+                                "★ 180x Echo Shard ★", ChatFormatting.AQUA,
+                                "end_rare_echo", 180,
+                                List.of("180x Echo Shard")
+                        );
+                    }
                 } else { // 65.0% Common
-                    pool.add(new ItemStack(Items.SHULKER_SHELL, getUncappedAmount(4, 0.3)));
-                    pool.add(new ItemStack(Items.ECHO_SHARD, 1));
+                    if (RANDOM.nextBoolean()) {
+                        return new ItemStack(Items.SHULKER_SHELL, 60);
+                    } else {
+                        return createRewardDisplay(
+                                Items.ECHO_SHARD, 64,
+                                "★ 80x Echo Shard ★", ChatFormatting.GRAY,
+                                "end_common_echo", 80,
+                                List.of("80x Echo Shard")
+                        );
+                    }
                 }
-                break;
             }
- 
+
             case "ore": {
-                int roll = RANDOM.nextInt(1000);
                 if (roll < 5) { // 0.5% Legendary
-                    pool.add(new ItemStack(Items.NETHERITE_INGOT, 3));
-                    pool.add(new ItemStack(Items.DIAMOND_BLOCK, 8));
+                    return createRewardDisplay(
+                            Items.NETHERITE_INGOT, 40,
+                            "★ Deepslate Sovereign ★", ChatFormatting.GOLD,
+                            "ore_legendary", 40,
+                            List.of("40x Netherite Ingot", "80x Diamond Block", "20x Ancient Debris")
+                    );
                 } else if (roll < 100) { // 9.5% Epic
-                    pool.add(new ItemStack(Items.DIAMOND_BLOCK, getUncappedAmount(4, 0.3)));
-                    pool.add(new ItemStack(Items.ANCIENT_DEBRIS, getUncappedAmount(4, 0.3)));
+                    return createRewardDisplay(
+                            Items.ANCIENT_DEBRIS, 40,
+                            "★ Ancient Treasury ★", ChatFormatting.LIGHT_PURPLE,
+                            "ore_epic", 40,
+                            List.of("10x Diamond Block", "40x Ancient Debris", "18x Netherite Ingot")
+                    );
                 } else if (roll < 350) { // 25.0% Rare
-                    pool.add(new ItemStack(Items.DIAMOND, getUncappedAmount(16, 0.3)));
-                    pool.add(new ItemStack(Items.EMERALD_BLOCK, getUncappedAmount(6, 0.3)));
-                    pool.add(new ItemStack(Items.GOLD_BLOCK, getUncappedAmount(6, 0.3)));
+                    if (RANDOM.nextBoolean()) {
+                        return new ItemStack(Items.DIAMOND_BLOCK, 60);
+                    } else {
+                        return createRewardDisplay(
+                                Items.EMERALD_BLOCK, 64,
+                                "★ 120x Emerald Block ★", ChatFormatting.AQUA,
+                                "ore_rare_emerald", 120,
+                                List.of("120x Emerald Block")
+                        );
+                    }
                 } else { // 65.0% Common
-                    pool.add(new ItemStack(Items.DIAMOND, getUncappedAmount(8, 0.3)));
-                    pool.add(new ItemStack(Items.GOLD_BLOCK, getUncappedAmount(3, 0.3)));
-                    pool.add(new ItemStack(Items.EMERALD_BLOCK, getUncappedAmount(3, 0.3)));
+                    if (RANDOM.nextBoolean()) {
+                        return new ItemStack(Items.DIAMOND_BLOCK, 27);
+                    } else {
+                        return new ItemStack(Items.EMERALD_BLOCK, 53);
+                    }
                 }
-                break;
             }
- 
+
             case "trial": {
-                int trialRoll = RANDOM.nextInt(1000);
-                if (trialRoll < 5) { // 0.5% Legendary
-                    pool.add(new ItemStack(Items.MACE, 1));
-                } else if (trialRoll < 100) { // 9.5% Epic
-                    pool.add(new ItemStack(Items.HEAVY_CORE, 1));
-                    pool.add(new ItemStack(Items.OMINOUS_TRIAL_KEY, getUncappedAmount(6, 0.3)));
-                } else if (trialRoll < 350) { // 25.0% Rare
-                    pool.add(new ItemStack(Items.BREEZE_ROD, getUncappedAmount(12, 0.3)));
-                    pool.add(new ItemStack(Items.TRIAL_KEY, getUncappedAmount(10, 0.3)));
-                    pool.add(new ItemStack(Items.OMINOUS_TRIAL_KEY, getUncappedAmount(3, 0.3)));
-                    pool.add(new ItemStack(Items.FLOW_ARMOR_TRIM_SMITHING_TEMPLATE, 1));
-                    pool.add(new ItemStack(Items.BOLT_ARMOR_TRIM_SMITHING_TEMPLATE, 1));
+                if (roll < 5) { // 0.5% Legendary
+                    return createRewardDisplay(
+                            Items.MACE, 1,
+                            "★ Trial Champion ★", ChatFormatting.GOLD,
+                            "trial_legendary", 1,
+                            List.of("1x Mace", "8x Heavy Core", "4x Netherite Ingot")
+                    );
+                } else if (roll < 100) { // 9.5% Epic
+                    return createRewardDisplay(
+                            Items.HEAVY_CORE, 5,
+                            "★ Heavy Core Cache ★", ChatFormatting.LIGHT_PURPLE,
+                            "trial_epic", 5,
+                            List.of("5x Heavy Core")
+                    );
+                } else if (roll < 350) { // 25.0% Rare
+                    if (RANDOM.nextBoolean()) {
+                        return createRewardDisplay(
+                                Items.OMINOUS_TRIAL_KEY, 60,
+                                "★ 60x Ominous Key & Trim ★", ChatFormatting.AQUA,
+                                "trial_rare_ominous", 60,
+                                List.of("60x Ominous Trial Key", "1x Trial Armor Trim")
+                        );
+                    } else {
+                        return createRewardDisplay(
+                                Items.TRIAL_KEY, 64,
+                                "★ 180x Trial Key & Trim ★", ChatFormatting.AQUA,
+                                "trial_rare_standard", 180,
+                                List.of("180x Trial Key", "1x Trial Armor Trim")
+                        );
+                    }
                 } else { // 65.0% Common
-                    pool.add(new ItemStack(Items.BREEZE_ROD, getUncappedAmount(6, 0.3)));
-                    pool.add(new ItemStack(Items.TRIAL_KEY, getUncappedAmount(4, 0.3)));
+                    if (RANDOM.nextBoolean()) {
+                        return createRewardDisplay(
+                                Items.TRIAL_KEY, 64,
+                                "★ 80x Trial Key ★", ChatFormatting.GRAY,
+                                "trial_common_key", 80,
+                                List.of("80x Trial Key")
+                        );
+                    } else {
+                        return createRewardDisplay(
+                                Items.BREEZE_ROD, 64,
+                                "★ 133x Breeze Rod ★", ChatFormatting.GRAY,
+                                "trial_common_breeze", 133,
+                                List.of("133x Breeze Rod")
+                        );
+                    }
                 }
-                break;
             }
         }
 
-        if (pool.isEmpty()) {
-            return new ItemStack(Items.COAL);
-        }
-        return pool.get(RANDOM.nextInt(pool.size())).copy();
+        return new ItemStack(Items.COAL, 1);
     }
 }

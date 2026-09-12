@@ -43,6 +43,13 @@ public class KingDataManager {
     private final Map<String, Integer> dailyFactionTaxes = new HashMap<>();
     private long lastTaxDay = 0;
 
+    // ── CROWN DUPLICATION PREVENTION ──
+    private final Set<UUID> receivedInitialCrown = new HashSet<>();
+
+    // ── HUNTER APEX PREDATOR DAILY CAP ──
+    private final Map<UUID, Integer> hunterDailySilver = new HashMap<>();
+    private final Map<UUID, Long> hunterDailyTimestamps = new HashMap<>();
+
     public static class ActiveQuest {
         public final String type; // "mining", "hunting", "farming"
         public final String difficulty; // "easy", "medium", "hard"
@@ -314,6 +321,47 @@ public class KingDataManager {
 
     public Map<UUID, Integer> getAllBounties() { return Collections.unmodifiableMap(activeBounties); }
 
+    // ── CROWN INITIAL BESTOWAL ───────────────────────────────────────────────
+
+    public boolean hasReceivedInitialCrown(UUID uuid) {
+        return receivedInitialCrown.contains(uuid);
+    }
+
+    public void setReceivedInitialCrown(UUID uuid, boolean received) {
+        if (received) {
+            receivedInitialCrown.add(uuid);
+        } else {
+            receivedInitialCrown.remove(uuid);
+        }
+    }
+
+    // ── HUNTER DAILY CAP ─────────────────────────────────────────────────────
+
+    public int getHunterDailySilver(UUID uuid) {
+        long now = System.currentTimeMillis();
+        long lastReset = hunterDailyTimestamps.getOrDefault(uuid, 0L);
+        if (now - lastReset > 24L * 60 * 60 * 1000L) {
+            hunterDailySilver.put(uuid, 0);
+            hunterDailyTimestamps.put(uuid, now);
+            return 0;
+        }
+        return hunterDailySilver.getOrDefault(uuid, 0);
+    }
+
+    public int getRemainingHunterSilverCap(UUID uuid) {
+        return Math.max(0, 300 - getHunterDailySilver(uuid));
+    }
+
+    public int addHunterSilverWithCap(UUID uuid, int desiredAmount) {
+        int current = getHunterDailySilver(uuid);
+        int allowed = Math.min(desiredAmount, Math.max(0, 300 - current));
+        if (allowed > 0) {
+            hunterDailySilver.put(uuid, current + allowed);
+            hunterDailyTimestamps.putIfAbsent(uuid, System.currentTimeMillis());
+        }
+        return allowed;
+    }
+
     // ── Persistence ───────────────────────────────────────────────────────────
 
     private Path getSaveFile(MinecraftServer server) {
@@ -504,6 +552,22 @@ public class KingDataManager {
         dailyFactionTaxes.forEach(dailyTaxesObj::addProperty);
         root.add("dailyFactionTaxes", dailyTaxesObj);
         root.addProperty("lastTaxDay", lastTaxDay);
+
+        // Save received initial crown
+        JsonArray crownArr = new JsonArray();
+        for (UUID uuid : receivedInitialCrown) {
+            crownArr.add(uuid.toString());
+        }
+        root.add("receivedInitialCrown", crownArr);
+
+        // Save hunter daily silver & timestamps
+        JsonObject hunterSilverObj = new JsonObject();
+        hunterDailySilver.forEach((uuid, amt) -> hunterSilverObj.addProperty(uuid.toString(), amt));
+        root.add("hunterDailySilver", hunterSilverObj);
+
+        JsonObject hunterTimeObj = new JsonObject();
+        hunterDailyTimestamps.forEach((uuid, time) -> hunterTimeObj.addProperty(uuid.toString(), time));
+        root.add("hunterDailyTimestamps", hunterTimeObj);
 
         try {
             Path path = getSaveFile(server);
@@ -769,6 +833,31 @@ public class KingDataManager {
                 JsonObject joinObj = root.getAsJsonObject("firstJoinTimes");
                 for (Map.Entry<String, JsonElement> entry : joinObj.entrySet()) {
                     firstJoinTimes.put(UUID.fromString(entry.getKey()), entry.getValue().getAsLong());
+                }
+            }
+
+            // Load received initial crowns
+            receivedInitialCrown.clear();
+            if (root.has("receivedInitialCrown")) {
+                for (JsonElement el : root.getAsJsonArray("receivedInitialCrown")) {
+                    receivedInitialCrown.add(UUID.fromString(el.getAsString()));
+                }
+            }
+
+            // Load hunter daily silver & timestamps
+            hunterDailySilver.clear();
+            if (root.has("hunterDailySilver")) {
+                JsonObject obj = root.getAsJsonObject("hunterDailySilver");
+                for (Map.Entry<String, JsonElement> entry : obj.entrySet()) {
+                    hunterDailySilver.put(UUID.fromString(entry.getKey()), entry.getValue().getAsInt());
+                }
+            }
+
+            hunterDailyTimestamps.clear();
+            if (root.has("hunterDailyTimestamps")) {
+                JsonObject obj = root.getAsJsonObject("hunterDailyTimestamps");
+                for (Map.Entry<String, JsonElement> entry : obj.entrySet()) {
+                    hunterDailyTimestamps.put(UUID.fromString(entry.getKey()), entry.getValue().getAsLong());
                 }
             }
 

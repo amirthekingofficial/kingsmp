@@ -95,7 +95,7 @@ public class GamblePreviewScreenHandler extends ChestMenu {
     }
 
     private static ItemStack createPreviewItem(net.minecraft.world.item.Item item, int count, String rarity, double chance) {
-        ItemStack stack = new ItemStack(item, count);
+        ItemStack stack = new ItemStack(item, Math.min(count, 64));
         List<Component> lore = new ArrayList<>();
         ChatFormatting rarityColor = switch (rarity.toLowerCase()) {
             case "legendary" -> ChatFormatting.GOLD;
@@ -116,6 +116,44 @@ public class GamblePreviewScreenHandler extends ChestMenu {
         lore.add(Component.literal("Drop Chance: ").withStyle(ChatFormatting.GRAY)
                 .append(Component.literal(chanceStr).withStyle(ChatFormatting.GREEN)));
         
+        if (count > 64) {
+            lore.add(Component.literal("Total Amount: ").withStyle(ChatFormatting.GRAY)
+                    .append(Component.literal(count + "x").withStyle(ChatFormatting.YELLOW, ChatFormatting.BOLD)));
+        }
+
+        stack.set(DataComponents.LORE, new net.minecraft.world.item.component.ItemLore(lore));
+        return stack;
+    }
+
+    private static ItemStack createPreviewBundle(net.minecraft.world.item.Item displayItem, String title, List<String> contents, String rarity, double chance) {
+        ItemStack stack = new ItemStack(displayItem, 1);
+        ChatFormatting rarityColor = switch (rarity.toLowerCase()) {
+            case "legendary" -> ChatFormatting.GOLD;
+            case "epic" -> ChatFormatting.LIGHT_PURPLE;
+            case "rare" -> ChatFormatting.AQUA;
+            case "common" -> ChatFormatting.GRAY;
+            default -> ChatFormatting.WHITE;
+        };
+        stack.set(DataComponents.CUSTOM_NAME, Component.literal("★ " + title + " ★").withStyle(rarityColor, ChatFormatting.BOLD));
+
+        List<Component> lore = new ArrayList<>();
+        lore.add(Component.literal("Rarity: ").withStyle(ChatFormatting.GRAY)
+                .append(Component.literal(rarity).withStyle(rarityColor, ChatFormatting.BOLD)));
+
+        String chanceStr = String.format(java.util.Locale.ROOT, "%.2f%%", chance);
+        if (chanceStr.endsWith(".00%")) {
+            chanceStr = String.format(java.util.Locale.ROOT, "%.0f%%", chance);
+        } else if (chanceStr.endsWith("0%")) {
+            chanceStr = String.format(java.util.Locale.ROOT, "%.1f%%", chance);
+        }
+        lore.add(Component.literal("Drop Chance: ").withStyle(ChatFormatting.GRAY)
+                .append(Component.literal(chanceStr).withStyle(ChatFormatting.GREEN)));
+
+        lore.add(Component.literal("Bundle Contents:").withStyle(ChatFormatting.YELLOW));
+        for (String line : contents) {
+            lore.add(Component.literal(" • " + line).withStyle(ChatFormatting.WHITE));
+        }
+
         stack.set(DataComponents.LORE, new net.minecraft.world.item.component.ItemLore(lore));
         return stack;
     }
@@ -124,71 +162,44 @@ public class GamblePreviewScreenHandler extends ChestMenu {
         List<ItemStack> list = new ArrayList<>();
         switch (type.toLowerCase()) {
             case "overworld":
-                list.add(createPreviewItem(Items.ENCHANTED_GOLDEN_APPLE, 3, "Legendary", 0.25));
-                list.add(createPreviewItem(Items.DIAMOND_BLOCK, 8, "Legendary", 0.25));
-                list.add(createPreviewItem(Items.GOLDEN_APPLE, 8, "Epic", 9.5 / 3.0));
-                list.add(createPreviewItem(Items.OMINOUS_BOTTLE, 4, "Epic", 9.5 / 3.0));
-                list.add(createPreviewItem(Items.DIAMOND, 24, "Epic", 9.5 / 3.0));
-                list.add(createPreviewItem(Items.DIAMOND, 12, "Rare", 25.0 / 12.0));
-                list.add(createPreviewItem(Items.GOLD_BLOCK, 4, "Rare", 25.0 / 12.0));
-                list.add(createPreviewItem(Items.SENTRY_ARMOR_TRIM_SMITHING_TEMPLATE, 1, "Rare", 25.0 / 12.0));
-                list.add(createPreviewItem(Items.VEX_ARMOR_TRIM_SMITHING_TEMPLATE, 1, "Rare", 25.0 / 12.0));
-                list.add(createPreviewItem(Items.WILD_ARMOR_TRIM_SMITHING_TEMPLATE, 1, "Rare", 25.0 / 12.0));
-                list.add(createPreviewItem(Items.WARD_ARMOR_TRIM_SMITHING_TEMPLATE, 1, "Rare", 25.0 / 12.0));
-                list.add(createPreviewItem(Items.SHAPER_ARMOR_TRIM_SMITHING_TEMPLATE, 1, "Rare", 25.0 / 12.0));
-                list.add(createPreviewItem(Items.HOST_ARMOR_TRIM_SMITHING_TEMPLATE, 1, "Rare", 25.0 / 12.0));
-                list.add(createPreviewItem(Items.RAISER_ARMOR_TRIM_SMITHING_TEMPLATE, 1, "Rare", 25.0 / 12.0));
-                list.add(createPreviewItem(Items.WAYFINDER_ARMOR_TRIM_SMITHING_TEMPLATE, 1, "Rare", 25.0 / 12.0));
-                list.add(createPreviewItem(Items.BOLT_ARMOR_TRIM_SMITHING_TEMPLATE, 1, "Rare", 25.0 / 12.0));
-                list.add(createPreviewItem(Items.FLOW_ARMOR_TRIM_SMITHING_TEMPLATE, 1, "Rare", 25.0 / 12.0));
-                list.add(createPreviewItem(Items.DIAMOND, 6, "Common", 65.0 / 2.0));
-                list.add(createPreviewItem(Items.GOLD_BLOCK, 2, "Common", 65.0 / 2.0));
+                list.add(createPreviewBundle(Items.ENCHANTED_GOLDEN_APPLE, "The Golden Hoard", List.of("5x Enchanted Golden Apple", "100x Diamond Block", "50x Gold Block", "5x Totem of Undying"), "Legendary", 0.5));
+                list.add(createPreviewBundle(Items.GOLDEN_APPLE, "Overworld Vault", List.of("75x Diamond Block", "10x Golden Apple", "8x Ominous Bottle"), "Epic", 9.5));
+                list.add(createPreviewBundle(Items.DIAMOND_BLOCK, "30x Diamond Block & Trim", List.of("30x Diamond Block", "1x Overworld Armor Trim"), "Rare", 12.5));
+                list.add(createPreviewBundle(Items.EMERALD_BLOCK, "60x Emerald Block & Trim", List.of("60x Emerald Block", "1x Overworld Armor Trim"), "Rare", 12.5));
+                list.add(createPreviewItem(Items.DIAMOND_BLOCK, 13, "Common", 32.5));
+                list.add(createPreviewItem(Items.GOLD_BLOCK, 27, "Common", 32.5));
                 break;
             case "nether":
-                list.add(createPreviewItem(Items.NETHERITE_INGOT, 4, "Legendary", 0.25));
-                list.add(createPreviewItem(Items.WITHER_SKELETON_SKULL, 3, "Legendary", 0.25));
-                list.add(createPreviewItem(Items.NETHERITE_INGOT, 1, "Epic", 9.5 / 5.0));
-                list.add(createPreviewItem(Items.NETHERITE_SCRAP, 8, "Epic", 9.5 / 5.0));
-                list.add(createPreviewItem(Items.SNOUT_ARMOR_TRIM_SMITHING_TEMPLATE, 1, "Epic", 9.5 / 5.0));
-                list.add(createPreviewItem(Items.RIB_ARMOR_TRIM_SMITHING_TEMPLATE, 1, "Epic", 9.5 / 5.0));
-                list.add(createPreviewItem(Items.SPIRE_ARMOR_TRIM_SMITHING_TEMPLATE, 1, "Epic", 9.5 / 5.0));
-                list.add(createPreviewItem(Items.NETHERITE_SCRAP, 5, "Rare", 25.0 / 2.0));
-                list.add(createPreviewItem(Items.GOLD_BLOCK, 6, "Rare", 25.0 / 2.0));
-                list.add(createPreviewItem(Items.NETHERITE_SCRAP, 2, "Common", 65.0 / 2.0));
-                list.add(createPreviewItem(Items.GOLD_BLOCK, 3, "Common", 65.0 / 2.0));
+                list.add(createPreviewBundle(Items.NETHERITE_INGOT, "Nether Overlord", List.of("32x Netherite Ingot", "16x Wither Skeleton Skull", "3x Netherite Upgrade Template"), "Legendary", 0.5));
+                list.add(createPreviewBundle(Items.NETHERITE_INGOT, "Netherite Cache & Trim", List.of("20x Netherite Ingot", "1x Nether Armor Trim"), "Epic", 9.5));
+                list.add(createPreviewItem(Items.NETHERITE_SCRAP, 29, "Rare", 12.5));
+                list.add(createPreviewItem(Items.GOLD_BLOCK, 80, "Rare", 12.5));
+                list.add(createPreviewItem(Items.NETHERITE_SCRAP, 13, "Common", 32.5));
+                list.add(createPreviewItem(Items.GOLD_BLOCK, 36, "Common", 32.5));
                 break;
             case "end":
-                list.add(createPreviewItem(Items.ELYTRA, 1, "Legendary", 0.5));
-                list.add(createPreviewItem(Items.NETHER_STAR, 1, "Epic", 9.5 / 2.0));
-                list.add(createPreviewItem(Items.SHULKER_BOX, 1, "Epic", 9.5 / 2.0));
-                list.add(createPreviewItem(Items.ECHO_SHARD, 4, "Rare", 25.0 / 2.0));
-                list.add(createPreviewItem(Items.SHULKER_SHELL, 10, "Rare", 25.0 / 2.0));
-                list.add(createPreviewItem(Items.SHULKER_SHELL, 4, "Common", 65.0 / 2.0));
-                list.add(createPreviewItem(Items.ECHO_SHARD, 1, "Common", 65.0 / 2.0));
+                list.add(createPreviewBundle(Items.ELYTRA, "Cosmic Monarch", List.of("1x Elytra", "25x Nether Star", "2x Shulker Box"), "Legendary", 0.5));
+                list.add(createPreviewItem(Items.NETHER_STAR, 15, "Epic", 9.5));
+                list.add(createPreviewItem(Items.SHULKER_SHELL, 135, "Rare", 12.5));
+                list.add(createPreviewItem(Items.ECHO_SHARD, 180, "Rare", 12.5));
+                list.add(createPreviewItem(Items.SHULKER_SHELL, 60, "Common", 32.5));
+                list.add(createPreviewItem(Items.ECHO_SHARD, 80, "Common", 32.5));
                 break;
             case "ore":
-                list.add(createPreviewItem(Items.NETHERITE_INGOT, 3, "Legendary", 0.25));
-                list.add(createPreviewItem(Items.DIAMOND_BLOCK, 8, "Legendary", 0.25));
-                list.add(createPreviewItem(Items.DIAMOND_BLOCK, 4, "Epic", 9.5 / 2.0));
-                list.add(createPreviewItem(Items.ANCIENT_DEBRIS, 4, "Epic", 9.5 / 2.0));
-                list.add(createPreviewItem(Items.DIAMOND, 16, "Rare", 25.0 / 3.0));
-                list.add(createPreviewItem(Items.EMERALD_BLOCK, 6, "Rare", 25.0 / 3.0));
-                list.add(createPreviewItem(Items.GOLD_BLOCK, 6, "Rare", 25.0 / 3.0));
-                list.add(createPreviewItem(Items.DIAMOND, 8, "Common", 65.0 / 3.0));
-                list.add(createPreviewItem(Items.GOLD_BLOCK, 3, "Common", 65.0 / 3.0));
-                list.add(createPreviewItem(Items.EMERALD_BLOCK, 3, "Common", 65.0 / 3.0));
+                list.add(createPreviewBundle(Items.NETHERITE_INGOT, "Deepslate Sovereign", List.of("40x Netherite Ingot", "80x Diamond Block", "20x Ancient Debris"), "Legendary", 0.5));
+                list.add(createPreviewBundle(Items.ANCIENT_DEBRIS, "Ancient Treasury", List.of("10x Diamond Block", "40x Ancient Debris", "18x Netherite Ingot"), "Epic", 9.5));
+                list.add(createPreviewItem(Items.DIAMOND_BLOCK, 60, "Rare", 12.5));
+                list.add(createPreviewItem(Items.EMERALD_BLOCK, 120, "Rare", 12.5));
+                list.add(createPreviewItem(Items.DIAMOND_BLOCK, 27, "Common", 32.5));
+                list.add(createPreviewItem(Items.EMERALD_BLOCK, 53, "Common", 32.5));
                 break;
             case "trial":
-                list.add(createPreviewItem(Items.MACE, 1, "Legendary", 0.5));
-                list.add(createPreviewItem(Items.HEAVY_CORE, 1, "Epic", 9.5 / 2.0));
-                list.add(createPreviewItem(Items.OMINOUS_TRIAL_KEY, 6, "Epic", 9.5 / 2.0));
-                list.add(createPreviewItem(Items.BREEZE_ROD, 12, "Rare", 25.0 / 5.0));
-                list.add(createPreviewItem(Items.TRIAL_KEY, 10, "Rare", 25.0 / 5.0));
-                list.add(createPreviewItem(Items.OMINOUS_TRIAL_KEY, 3, "Rare", 25.0 / 5.0));
-                list.add(createPreviewItem(Items.FLOW_ARMOR_TRIM_SMITHING_TEMPLATE, 1, "Rare", 25.0 / 5.0));
-                list.add(createPreviewItem(Items.BOLT_ARMOR_TRIM_SMITHING_TEMPLATE, 1, "Rare", 25.0 / 5.0));
-                list.add(createPreviewItem(Items.BREEZE_ROD, 6, "Common", 65.0 / 2.0));
-                list.add(createPreviewItem(Items.TRIAL_KEY, 4, "Common", 65.0 / 2.0));
+                list.add(createPreviewBundle(Items.MACE, "Trial Champion", List.of("1x Mace", "8x Heavy Core", "4x Netherite Ingot"), "Legendary", 0.5));
+                list.add(createPreviewItem(Items.HEAVY_CORE, 5, "Epic", 9.5));
+                list.add(createPreviewBundle(Items.OMINOUS_TRIAL_KEY, "60x Ominous Key & Trim", List.of("60x Ominous Trial Key", "1x Trial Armor Trim"), "Rare", 12.5));
+                list.add(createPreviewBundle(Items.TRIAL_KEY, "180x Trial Key & Trim", List.of("180x Trial Key", "1x Trial Armor Trim"), "Rare", 12.5));
+                list.add(createPreviewItem(Items.TRIAL_KEY, 80, "Common", 32.5));
+                list.add(createPreviewItem(Items.BREEZE_ROD, 133, "Common", 32.5));
                 break;
         }
         return list;

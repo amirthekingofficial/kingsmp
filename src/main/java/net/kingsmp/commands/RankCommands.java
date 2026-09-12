@@ -92,10 +92,17 @@ public class RankCommands {
                     .append(Component.literal(path.getDisplayName()).withStyle(ChatFormatting.AQUA))
                     .append(Component.literal(" [Rung " + rung + "/4]").withStyle(ChatFormatting.DARK_GRAY)), false);
 
-            src.sendSuccess(() -> Component.literal("Crown Eligibility: ").withStyle(ChatFormatting.GRAY)
-                    .append(Component.literal(path.getCrownEligibility().getDisplayName())
-                            .withStyle(rung >= 4 ? ChatFormatting.GREEN : ChatFormatting.RED))
-                    .append(Component.literal(rung >= 4 ? " (Eligible!)" : " (Requires Rung 4: " + path.getRungTitle(4) + ")").withStyle(ChatFormatting.GRAY)), false);
+            boolean isLeader = FactionManager.isFactionLeader(target);
+            if (isLeader) {
+                src.sendSuccess(() -> Component.literal("Crown Eligibility: ").withStyle(ChatFormatting.GRAY)
+                        .append(Component.literal("Crown of the End").withStyle(ChatFormatting.LIGHT_PURPLE, ChatFormatting.BOLD))
+                        .append(Component.literal(" (Eligible as Faction Leader!)").withStyle(ChatFormatting.GREEN)), false);
+            } else {
+                src.sendSuccess(() -> Component.literal("Crown Eligibility: ").withStyle(ChatFormatting.GRAY)
+                        .append(Component.literal(path.getCrownEligibility().getDisplayName())
+                                .withStyle(rung >= 4 ? ChatFormatting.GREEN : ChatFormatting.RED))
+                        .append(Component.literal(rung >= 4 ? " (Eligible!)" : " (Requires Rung 4: " + path.getRungTitle(4) + ")").withStyle(ChatFormatting.GRAY)), false);
+            }
         } else {
             src.sendSuccess(() -> Component.literal("Path: ").withStyle(ChatFormatting.GRAY)
                     .append(Component.literal("None chosen. Use /rank path <name>").withStyle(ChatFormatting.RED)), false);

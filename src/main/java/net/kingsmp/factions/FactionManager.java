@@ -242,6 +242,9 @@ public class FactionManager {
     }
 
     public static int getPlayerRung(UUID uuid) {
+        if (factions.containsValue(uuid)) {
+            return 4; // Faction Leaders/Kings always possess maximum Rung 4 standing
+        }
         return playerRungs.getOrDefault(uuid, 1);
     }
 
@@ -257,8 +260,10 @@ public class FactionManager {
             return false;
         }
 
-        if (currentPath != null) {
-            // Switching paths costs Silver and resets rung to 1
+        boolean isLeader = factions.containsValue(player.getUUID());
+
+        if (currentPath != null && !isLeader) {
+            // Switching paths costs Silver and resets rung to 1 (only for non-leaders)
             int fee = KingSMPConfig.rankPathSwitchFee;
             if (KingSMPMod.dataManager.getSilver(player.getUUID()) < fee) {
                 player.sendSystemMessage(Component.literal("Switching rank paths costs " + fee + " 🪙 Silver!").withStyle(ChatFormatting.RED));
@@ -269,12 +274,23 @@ public class FactionManager {
         }
 
         playerPaths.put(player.getUUID(), newPath);
-        playerRungs.put(player.getUUID(), 1);
+        if (isLeader) {
+            playerRungs.put(player.getUUID(), 4);
+            playerRanks.put(player.getUUID(), FactionRank.KING);
+        } else {
+            playerRungs.put(player.getUUID(), 1);
+        }
         KingSMPMod.saveNow();
 
-        player.sendSystemMessage(Component.literal("⚔ Chosen Rank Path: ").withStyle(ChatFormatting.GREEN)
-                .append(Component.literal(newPath.getDisplayName()).withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD))
-                .append(Component.literal(" (Starting at Rung 1: Recruit)").withStyle(ChatFormatting.GRAY)));
+        if (isLeader) {
+            player.sendSystemMessage(Component.literal("⚔ Chosen Rank Path: ").withStyle(ChatFormatting.GREEN)
+                    .append(Component.literal(newPath.getDisplayName()).withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD))
+                    .append(Component.literal(" (Faction Leader: Max Rung 4 - " + newPath.getRungTitle(4) + ")").withStyle(ChatFormatting.YELLOW)));
+        } else {
+            player.sendSystemMessage(Component.literal("⚔ Chosen Rank Path: ").withStyle(ChatFormatting.GREEN)
+                    .append(Component.literal(newPath.getDisplayName()).withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD))
+                    .append(Component.literal(" (Starting at Rung 1: Recruit)").withStyle(ChatFormatting.GRAY)));
+        }
         return true;
     }
 
@@ -332,6 +348,10 @@ public class FactionManager {
 
     public static String getPlayerRankTitle(UUID uuid) {
         if (factions.containsValue(uuid)) {
+            RankPath path = playerPaths.get(uuid);
+            if (path != null) {
+                return "Faction King (" + path.getRungTitle(4) + ")";
+            }
             return "Faction King";
         }
         String faction = playerFactions.get(uuid);

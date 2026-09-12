@@ -88,6 +88,21 @@ public class KingSMPMod implements ModInitializer {
         }
     }
 
+    /** Synchronous immediate save bypassing deferred throttle, for crash/combat logging safety. */
+    public static void saveNowSync() {
+        if (server == null)
+            return;
+        synchronized (KingSMPMod.class) {
+            try {
+                dataManager.saveToDisk(server);
+                lastSaveTime = System.currentTimeMillis();
+                savePending = false;
+            } catch (Exception e) {
+                LOGGER.error("Failed to execute synchronous save", e);
+            }
+        }
+    }
+
     // Memory tracker to prevent the election from triggering constantly during the
     // 250th day
     private static long lastElectionDay = -1;
@@ -130,7 +145,7 @@ public class KingSMPMod implements ModInitializer {
                     if (entity instanceof net.minecraft.server.level.ServerPlayer killer) {
 
                         // 1. Bounty Claim Logic
-                        if (killedEntity instanceof net.minecraft.server.level.ServerPlayer victim) {
+                        if (killedEntity instanceof net.minecraft.server.level.ServerPlayer victim && !killer.getUUID().equals(victim.getUUID())) {
                             int bounty = dataManager.getBounty(victim.getUUID());
                             if (bounty > 0) {
                                 dataManager.addSilver(killer.getUUID(), bounty);
@@ -214,10 +229,19 @@ public class KingSMPMod implements ModInitializer {
                                 if (hunterLvl >= 2) {
                                     float bonusChance = (hunterLvl >= 5) ? 0.25f : 0.05f * (hunterLvl - 1);
                                     if (killer.getRandom().nextFloat() < bonusChance) {
-                                        killer.sendOverlayMessage(
-                                                net.minecraft.network.chat.Component.literal("🏹 Apex Predator! Extra mob bounty claimed.")
-                                                        .withStyle(net.minecraft.ChatFormatting.RED));
-                                        dataManager.addSilver(killer.getUUID(), 5 * hunterLvl);
+                                        int desiredSilver = 5 * hunterLvl;
+                                        int mintedSilver = dataManager.addHunterSilverWithCap(killer.getUUID(), desiredSilver);
+                                        if (mintedSilver > 0) {
+                                            dataManager.addSilver(killer.getUUID(), mintedSilver);
+                                            killer.sendOverlayMessage(
+                                                    net.minecraft.network.chat.Component.literal("🏹 Apex Predator! +" + mintedSilver + " Silver bounty claimed. (" + dataManager.getRemainingHunterSilverCap(killer.getUUID()) + "/300 cap remaining)")
+                                                            .withStyle(net.minecraft.ChatFormatting.RED));
+                                            saveNow();
+                                        } else {
+                                            killer.sendOverlayMessage(
+                                                    net.minecraft.network.chat.Component.literal("🏹 Apex Predator! Daily Silver cap reached (300/300 🪙).")
+                                                            .withStyle(net.minecraft.ChatFormatting.GRAY));
+                                        }
                                     }
                                 }
                             }
